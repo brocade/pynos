@@ -2926,3 +2926,66 @@ class Interface(object):
 
     def bfd(self, **kwargs):
         raise NotImplementedError
+
+
+
+    def access_mode(self, **kwargs):
+        """Set access mode (acess).
+
+        Args:
+            int_type (str): Type of interface. (gigabitethernet,
+                tengigabitethernet, etc)
+            name (str): Name of interface. (1/0/5, 1/0/10, etc)
+            mode (str): access port mode (access).
+            callback (function): A function executed upon completion oj the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `int_type`, `name`, or `mode` is not specified.
+            ValueError: if `int_type`, `name`, or `mode` is not valid.
+
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.access_mode(name='225/0/38',
+            ...         int_type='tengigabitethernet', mode='access')
+            ...         dev.interface.access_mode()
+            ...         # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+            KeyError
+        """
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        mode = kwargs.pop('mode').lower()
+        callback = kwargs.pop('callback', self._callback)
+
+        int_types = ['gigabitethernet', 'tengigabitethernet',
+                     'fortygigabitethernet', 'hundredgigabitethernet',
+                     'port_channel']
+
+        if int_type not in int_types:
+            raise ValueError("Incorrect int_type value.")
+
+        valid_modes = ['access']
+        if mode not in valid_modes:
+            raise ValueError("Incorrect mode value")
+
+        if not pynos.utilities.valid_interface(int_type, name):
+            raise ValueError('`name` must be in the format of x/y/z for '
+                             'physical interfaces or x for port channel.')
+
+        mode_args = dict(name=name, vlan_mode=mode)
+        switchport_mode = getattr(self._interface, 'interface_%s_switchport_'
+                                  'mode_vlan_mode' % int_type)
+        config = switchport_mode(**mode_args)
+        print pynos.utilities.print_xml_string(config)
+        return callback(config)
+
