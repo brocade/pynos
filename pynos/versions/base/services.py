@@ -26,6 +26,7 @@ class Services(object):
     Attributes:
         None
     """
+
     def __init__(self, callback):
         """
         Services object init.
@@ -92,4 +93,56 @@ class Services(object):
         config = vrrp(**vrrp_args)
         if not enabled:
             config.find('.//*vrrp').set('operation', 'delete')
+        return callback(config)
+
+    def vrrpe(self, **kwargs):
+        """Enable or Disable Vrrpe.
+
+        Args:
+            ip_version (str): The IP version ('4' or '6') for which
+                vrrpe should be enabled/disabled.  Default: `4`.
+            enabled (bool): If vrrpe should be enabled or disabled.  Default:
+                ``True``.
+            rbridge_id (str): The rbridge ID of the device on which vrrpe will
+                be enabled/disabled.  Default: `1`.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            None
+
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.bgp.local_asn(rbridge_id='225')
+            ...         output = dev.bgp.local_asn(rbridge_id='225',
+            ...         enabled=False)
+            ...         output = dev.bgp.local_asn(rbridge_id='225',
+            ...         ip_version='6')
+            ...         output = dev.bgp.local_asn(rbridge_id='225',
+            ...         enabled=False, ip_version='6')
+            ...         dev.services.vrrpe()
+            Traceback (most recent call last):
+            KeyError
+        """
+        ip_version = kwargs.pop('ip_version', '4')
+        enabled = kwargs.pop('enabled', True)
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        vrrpe_args = dict(rbridge_id=rbridge_id)
+        vrrpe_method = 'rbridge_id_protocol_hide_vrrp_holder_vrrp_extended'
+        if ip_version == '6':
+            vrrpe_method = 'rbridge_id_ipv6_proto_vrrpv3_vrrp_extended'
+        vrrpe = getattr(self._rbridge, vrrpe_method)
+        config = vrrpe(**vrrpe_args)
+        if not enabled:
+            config.find('.//*vrrpe').set('operation', 'delete')
         return callback(config)
