@@ -2926,3 +2926,285 @@ class Interface(object):
 
     def bfd(self, **kwargs):
         raise NotImplementedError
+
+    def vrrpe_SPF_basic(self, **kwargs):
+        """Set vrrpe short path forwarding to default.
+
+        Args:
+            int_type (str): Type of interface. (gigabitethernet,
+                tengigabitethernet, etc).
+            name (str): Name of interface. (1/0/5, 1/0/10, etc).
+            enable (bool): If vrrpe short path fowarding should be enabled 
+                or disabled.Default:``True``.
+            get (bool) : Get config instead of editing config. (True, False)
+            vrid (str): vrrpe router ID.
+            rbridge_id (str): rbridge-id for device. Only required when type is
+                `ve`.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `int_type`, `name`, `vrid` is not passed.
+            ValueError: if `int_type`, `name`, `vrid` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.services.vrrpe(ip_version='6',
+            ...         enable=True, rbridge_id='225')
+            ...         output = dev.interface.vrrpe_vip(int_type='ve', name='89',
+            ...         vrid='1', vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
+            ...         rbridge_id='225')
+            ...         output = dev.services.vrrpe(enable=False,
+            ...         rbridge_id='225')
+            ...         output = dev.interface.vrrpe_SPF_basic(int_type='ve',
+            ...         name='89', vrid='1', rbridge_id='1')
+        """
+
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        vrid = kwargs.pop('vrid')
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['gigabitethernet', 'tengigabitethernet',
+                           'fortygigabitethernet', 'hundredgigabitethernet',
+                           'port_channel', 've']
+        vrrpe_args = dict(name=name, vrid=vrid)
+        method_class = self._interface
+        if get:
+            enable = None
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        method_name = 'interface_%s_vrrpe_short_path_forwarding_basic' % int_type
+        if int_type == 've':
+            method_name = 'rbridge_id_%s' % method_name
+            method_class = self._rbridge
+            vrrpe_args['rbridge_id'] = rbridge_id
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        elif not pynos.utilities.valid_interface(int_type, name):
+            raise ValueError('`name` must be in the format of x/y/z for '
+                             'physical interfaces or x for port channel.')
+        vrrpe_SPF_basic = getattr(method_class, method_name)
+        config = vrrpe_SPF_basic(**vrrpe_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+            config.find('.//*short-path-forwarding').set('operation', 'delete')
+        return callback(config)
+
+    def vrrpe_vip(self, **kwargs):
+        """Set vrrpe VIP.
+
+        Args:
+            int_type (str): Type of interface. (gigabitethernet,
+                tengigabitethernet, etc).
+            name (str): Name of interface. (1/0/5, 1/0/10, etc).
+            vrid (str): vrrpev3 ID.
+            enable (bool): If vrrpe virtual IP should be enabled
+                or disabled.Default:``True``.
+            get (bool): Get config instead of editing config. (True, False)
+            vip (str): IPv4/IPv6 Virtual IP Address.
+            rbridge_id (str): rbridge-id for device. Only required when type is
+                `ve`.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `int_type`, `name`, `vrid`, or `vip` is not passed.
+            ValueError: if `int_type`, `name`, `vrid`, or `vip` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.services.vrrpe(enable=True,
+            ...         rbridge_id='225')
+            ...         output = dev.interface.set_ip('tengigabitethernet',
+            ...         '225/0/18', '10.1.1.2/24')
+            ...         output = dev.interface.ip_address(name='225/0/18',
+            ...         int_type='tengigabitethernet',
+            ...         ip_addr='2001:4818:f000:1ab:cafe:beef:1000:2/64')
+            ...         dev.interface.vrrpe_vip(int_type='tengigabitethernet',
+            ...         name='225/0/18', vrid='1', vip='10.1.1.1/24')
+            ...         dev.interface.vrrpe_vip(int_type='tengigabitethernet',
+            ...         name='225/0/18', vrid='1',
+            ...         vip='fe80::cafe:beef:1000:1/64')
+            ...         dev.interface.vrrpe_vip(int_type='tengigabitethernet',
+            ...         name='225/0/18', vrid='1',
+            ...         vip='2001:4818:f000:1ab:cafe:beef:1000:1/64')
+            ...         output = dev.interface.add_vlan_int('89')
+            ...         output = dev.interface.ip_address(name='89',
+            ...         int_type='ve', ip_addr='172.16.1.1/24',
+            ...         rbridge_id='225')
+           ...         output = dev.interface.ip_address(name='89',
+            ...         int_type='ve', rbridge_id='225',
+            ...         ip_addr='2002:4818:f000:1ab:cafe:beef:1000:2/64')
+            ...         output = dev.services.vrrpe(ip_version='6',
+            ...         enable=False, rbridge_id='225')
+            ...         output = dev.services.vrrpe(enable=False,
+            ...         rbridge_id='225')
+            ...         dev.interface.vrrpe_vip(int_type='ve', name='89',
+            ...         vrid='1', vip='172.16.1.2/24', rbridge_id='225')
+            ...         dev.interface.vrrpe_vip(int_type='ve', name='89',
+            ...         vrid='1', vip='fe80::dafe:beef:1000:1/64',
+            ...         rbridge_id='225')
+            ...         dev.interface.vrrpe_vip(int_type='ve', name='89',
+            ...         vrid='1', vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
+            ...         rbridge_id='225')
+        """
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        vrid = kwargs.pop('vrid')
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        vip = kwargs.pop('vip')
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['gigabitethernet', 'tengigabitethernet',
+                           'fortygigabitethernet', 'hundredgigabitethernet',
+                           'port_channel', 've']
+        if get:
+            enable = None
+        ipaddress = ip_interface(unicode(vip))
+        vrrpe_vip = None
+        vrrpe_args = dict(name=name,
+                          vrid=vrid,
+                          virtual_ipaddr=str(ipaddress.ip))
+        method_class = self._interface
+
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        if ipaddress.version == 4:
+            vrrpe_args['version'] = '3'
+            method_name = 'interface_%s_vrrpe_virtual_ip_virtual_' \
+                          'ipaddr' % int_type
+        elif ipaddress.version == 6:
+            method_name = 'interface_%s_ipv6_vrrpv3e_group_virtual_ip_' \
+                          'virtual_ipaddr' % int_type
+
+        if int_type == 've':
+            method_name = 'rbridge_id_%s' % method_name
+            if ipaddress.version == 6:
+                method_name = method_name.replace('group_', '')
+            method_class = self._rbridge
+            vrrpe_args['rbridge_id'] = rbridge_id
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        elif not pynos.utilities.valid_interface(int_type, name):
+            raise ValueError('`name` must be in the format of x/y/z for '
+                             'physical interfaces or x for port channel.')
+
+        vrrpe_vip = getattr(method_class, method_name)
+        config = vrrpe_vip(**vrrpe_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+            config.find('.//*virtual-ip').set('operation', 'delete')
+        return callback(config)
+
+    def vrrpe_vmac(self, **kwargs):
+        """Set vrrpe virtual mac.
+
+        Args:
+            int_type (str): Type of interface. (gigabitethernet,
+                tengigabitethernet, etc).
+            name (str): Name of interface. (1/0/5, 1/0/10, etc).
+            vrid (str): vrrpev3 ID.
+            enable (bool): If vrrpe virtual MAC should be enabled
+                or disabled.Default:``True``.
+            get (bool): Get config instead of editing config. (True, False)
+            virtual_mac (str):Virtual mac-address in the format
+            02e0.5200.00xx.
+            rbridge_id (str): rbridge-id for device. Only required
+            when type is 've'.
+            callback (function): A function executed upon completion
+            of the  method.  The only parameter passed to `callback`
+            will be the ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `int_type`, `name`, `vrid`, or `vmac` is not passed.
+            ValueError: if `int_type`, `name`, `vrid`, or `vmac` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.services.vrrpe(enable=False,
+            ...         rbridge_id='225')
+            ...         output = dev.interface.vrrpe_vip(int_type='ve',
+            ...         name='89',vrid='1',
+            ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
+            ...         rbridge_id='225')
+            ...         output = dev.services.vrrpe(enable=False,
+            ...         rbridge_id='225')
+            ...         output = dev.interface.vrrpe_vmac(int_type='ve',
+            ...         name='89', vrid='1', rbridge_id='1',
+            ...         virtual_mac='aaaa.bbbb.cccc')
+        """
+
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        vrid = kwargs.pop('vrid')
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        virtual_mac = kwargs.pop('virtual_mac', '02e0.5200.00xx')
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['gigabitethernet', 'tengigabitethernet',
+                           'fortygigabitethernet', 'hundredgigabitethernet',
+                           'port_channel', 've']
+        if get:
+            enable = None
+        vrrpe_args = dict(name=name,
+                          vrid=vrid,
+                          virtual_mac=virtual_mac)
+        method_class = self._interface
+
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        method_name = 'interface_%s_vrrpe_virtual_mac' % int_type
+
+        if int_type == 've':
+            method_name = 'rbridge_id_%s' % method_name
+            method_class = self._rbridge
+            vrrpe_args['rbridge_id'] = rbridge_id
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        elif not pynos.utilities.valid_interface(int_type, name):
+            raise ValueError('`name` must be in the format of x/y/z for '
+                             'physical interfaces or x for port channel.')
+
+        vrrpe_vmac = getattr(method_class, method_name)
+        config = vrrpe_vmac(**vrrpe_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+            config.find('.//*virtual-mac').set('operation', 'delete')
+        return callback(config)
