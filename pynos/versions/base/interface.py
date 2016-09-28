@@ -984,6 +984,7 @@ class Interface(object):
                 tengigabitethernet, etc)
             name (str): Name of interface. (1/0/5, 1/0/10, etc)
             action (str): Action to take on trunk. (add, remove, none, all)
+            get (bool): Get config instead of editing config. (True, False)
             vlan (str): vlan id for action. Only valid for add and remove.
             ctag (str): ctag range. Only valid for add and remove.
             callback (function): A function executed upon completion of the
@@ -2353,8 +2354,8 @@ class Interface(object):
         int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name')
         mode = kwargs.pop('mode').lower()
+        get = kwargs.pop('get', False)
         callback = kwargs.pop('callback', self._callback)
-
         int_types = ['gigabitethernet', 'tengigabitethernet',
                      'fortygigabitethernet', 'hundredgigabitethernet',
                      'port_channel']
@@ -2373,6 +2374,9 @@ class Interface(object):
         mode_args = dict(name=name, vlan_mode=mode)
         switchport_mode = getattr(self._interface, 'interface_%s_switchport_'
                                   'mode_vlan_mode' % int_type)
+        config = switchport_mode(**mode_args) 
+        if get:
+            return callback(config, handler='get_config')
         config = switchport_mode(**mode_args)
         return callback(config)
 
@@ -2927,7 +2931,7 @@ class Interface(object):
     def bfd(self, **kwargs):
         raise NotImplementedError
 
-    def vrrpe_SPF_basic(self, **kwargs):
+    def vrrpe_spf_basic(self, **kwargs):
         """Set vrrpe short path forwarding to default.
 
         Args:
@@ -2965,7 +2969,7 @@ class Interface(object):
             ...         rbridge_id='225')
             ...         output = dev.services.vrrpe(enable=False,
             ...         rbridge_id='225')
-            ...         output = dev.interface.vrrpe_SPF_basic(int_type='ve',
+            ...         output = dev.interface.vrrpe_spf_basic(int_type='ve',
             ...         name='89', vrid='1', rbridge_id='1')
         """
 
@@ -2996,8 +3000,8 @@ class Interface(object):
         elif not pynos.utilities.valid_interface(int_type, name):
             raise ValueError('`name` must be in the format of x/y/z for '
                              'physical interfaces or x for port channel.')
-        vrrpe_SPF_basic = getattr(method_class, method_name)
-        config = vrrpe_SPF_basic(**vrrpe_args)
+        vrrpe_spf_basic = getattr(method_class, method_name)
+        config = vrrpe_spf_basic(**vrrpe_args)
         if get:
             return callback(config, handler='get_config')
         if not enable:
