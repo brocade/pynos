@@ -25,7 +25,6 @@ import pynos.utilities
 
 
 class Interface(object):
-
     """
     The Interface class holds all the actions assocaiated with the Interfaces
     of a NOS device.
@@ -421,10 +420,10 @@ class Interface(object):
         method_name = None
         method_class = self._interface
         if ipaddress.version == 4:
-            method_name = 'interface_%s_ip_ip_config_address_'\
+            method_name = 'interface_%s_ip_ip_config_address_' \
                           'address' % int_type
         elif ipaddress.version == 6:
-            method_name = 'interface_%s_ipv6_ipv6_config_address_ipv6_'\
+            method_name = 'interface_%s_ipv6_ipv6_config_address_ipv6_' \
                           'address_address' % int_type
 
         if int_type == 've':
@@ -434,10 +433,10 @@ class Interface(object):
             if not pynos.utilities.valid_vlan_id(name):
                 raise InvalidVlanId("`name` must be between `1` and `8191`")
         elif int_type == 'loopback':
-            method_name = 'rbridge_id_interface_loopback_ip_ip_config_'\
+            method_name = 'rbridge_id_interface_loopback_ip_ip_config_' \
                           'address_address'
             if ipaddress.version == 6:
-                method_name = 'rbridge_id_interface_loopback_ipv6_ipv6_'\
+                method_name = 'rbridge_id_interface_loopback_ipv6_ipv6_' \
                               'config_address_ipv6_address_address'
             method_class = self._rbridge
             ip_args['rbridge_id'] = rbridge_id
@@ -938,7 +937,7 @@ class Interface(object):
             if not pynos.utilities.valid_vlan_id(name):
                 raise InvalidVlanId("`name` must be between `1` and `8191`")
         elif int_type == 'loopback':
-            method_name = 'rbridge_id_interface_{0}_intf_'\
+            method_name = 'rbridge_id_interface_{0}_intf_' \
                           '{0}_shutdown'.format(int_type)
             method_class = self._rbridge
             state_args['rbridge_id'] = rbridge_id
@@ -1333,7 +1332,7 @@ class Interface(object):
 
         tag_args = dict(name=name)
         tag_native_vlan = getattr(self._interface, 'interface_%s_switchport_'
-                                  'trunk_tag_native_vlan' % int_type)
+                                                   'trunk_tag_native_vlan' % int_type)
         config = tag_native_vlan(**tag_args)
         if not enabled:
             untag = config.find('.//*native-vlan')
@@ -1867,10 +1866,10 @@ class Interface(object):
 
         if ipaddress.version == 4:
             vrrp_args['version'] = '3'
-            method_name = 'interface_%s_vrrp_virtual_ip_virtual_'\
+            method_name = 'interface_%s_vrrp_virtual_ip_virtual_' \
                           'ipaddr' % int_type
         elif ipaddress.version == 6:
-            method_name = 'interface_%s_ipv6_vrrpv3_group_virtual_ip_'\
+            method_name = 'interface_%s_ipv6_vrrpv3_group_virtual_ip_' \
                           'virtual_ipaddr' % int_type
 
         if int_type == 've':
@@ -2373,8 +2372,8 @@ class Interface(object):
 
         mode_args = dict(name=name, vlan_mode=mode)
         switchport_mode = getattr(self._interface, 'interface_%s_switchport_'
-                                  'mode_vlan_mode' % int_type)
-        config = switchport_mode(**mode_args) 
+                                                   'mode_vlan_mode' % int_type)
+        config = switchport_mode(**mode_args)
         if get:
             return callback(config, handler='get_config')
         config = switchport_mode(**mode_args)
@@ -2721,6 +2720,30 @@ class Interface(object):
         return request_interface
 
     @property
+    def switchport_list(self):
+        """list[dict]:A list of dictionary items describing the details 
+            of list of dictionary items describing the details of switch port"""
+        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
+        result = []
+        request_interface = self.get_interface_switchport_request()
+        interface_result = self._callback(request_interface, 'get')
+        for interface in interface_result.findall('%sswitchport' % urn):
+            vlans = []
+            interface_type = self.get_node_value(interface, '%sinterface-type', urn)
+            interface_name = self.get_node_value(interface, '%sinterface-name', urn)
+            mode = self.get_node_value(interface, '%smode', urn)
+            intf = interface.find('%sactive-vlans' % urn)
+            for vlan_node in intf.findall('%svlanid' % urn):
+                vlan = vlan_node.text
+                vlans.append(vlan)
+            results = {'vlan-id': vlans,
+                       'mode': mode,
+                       'interface-name': interface_name,
+                       'interface_type': interface_type}
+            result.append(results)
+        return result
+
+    @property
     def vlans(self):
         """list[dict]: A list of dictionary items describing the details of
         vlan interfaces.
@@ -2777,6 +2800,15 @@ class Interface(object):
                            'interface': ports}
                 result.append(results)
         return result
+
+    @staticmethod
+    def get_interface_switchport_request():
+        """Creates a new Netconf request"""
+        request_interface = ET.Element(
+            'get-interface-switchport',
+            xmlns="urn:brocade.com:mgmt:brocade-interface-ext"
+        )
+        return request_interface
 
     @staticmethod
     def get_vlan_brief_request(last_vlan_id):
@@ -2876,7 +2908,7 @@ class Interface(object):
                         item1, '%sinterface-name', pc_urn)
                     actor_port = self.get_node_value(
                         item1, '%sactor-port', pc_urn)
-                    sync = self.get_node_value(item1, '%ssync',  pc_urn)
+                    sync = self.get_node_value(item1, '%ssync', pc_urn)
                     port_channel_interface = {'rbridge-id': rbridge_id,
                                               'interface-type': int_type,
                                               'interface-name': int_name,
