@@ -13,15 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import xml.etree.ElementTree as ET
 import logging
 import re
+import xml.etree.ElementTree as ET
 
 from ipaddress import ip_interface
+
+import pynos.utilities
+from pynos.exceptions import InvalidVlanId
 from pynos.versions.base.yang.brocade_interface import brocade_interface
 from pynos.versions.base.yang.brocade_rbridge import brocade_rbridge
-from pynos.exceptions import InvalidVlanId
-import pynos.utilities
 
 
 class Interface(object):
@@ -2827,6 +2828,42 @@ class Interface(object):
         return request_interface
 
     @property
+    def switchport_list(self):
+        """list[dict]:A list of dictionary items describing the details
+            of list of dictionary items describing the details of switch
+            port"""
+        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
+        result = []
+        request_interface = self.get_interface_switchport_request()
+        interface_result = self._callback(request_interface, 'get')
+        for interface in interface_result.findall('%sswitchport' % urn):
+            vlans = []
+            interface_type = self.get_node_value(interface, '%sinterface-type',
+                                                 urn)
+            interface_name = self.get_node_value(interface, '%sinterface-name',
+                                                 urn)
+            mode = self.get_node_value(interface, '%smode', urn)
+            intf = interface.find('%sactive-vlans' % urn)
+            for vlan_node in intf.findall('%svlanid' % urn):
+                vlan = vlan_node.text
+                vlans.append(vlan)
+            results = {'vlan-id': vlans,
+                       'mode': mode,
+                       'interface-name': interface_name,
+                       'interface_type': interface_type}
+            result.append(results)
+        return result
+
+    @staticmethod
+    def get_interface_switchport_request():
+        """Creates a new Netconf request"""
+        request_interface = ET.Element(
+            'get-interface-switchport',
+            xmlns="urn:brocade.com:mgmt:brocade-interface-ext"
+        )
+        return request_interface
+
+    @property
     def port_channels(self):
         """list[dict]: A list of dictionary items of port channels.
 
@@ -2970,7 +3007,7 @@ class Interface(object):
             int_type (str): Type of interface. (gigabitethernet,
                 tengigabitethernet, etc).
             name (str): Name of interface. (1/0/5, 1/0/10, etc).
-            enable (bool): If vrrpe short path fowarding should be enabled 
+            enable (bool): If vrrpe short path fowarding should be enabled
                 or disabled.Default:``True``.
             get (bool) : Get config instead of editing config. (True, False)
             vrid (str): vrrpe router ID.
@@ -2982,10 +3019,18 @@ class Interface(object):
 
         Returns:
             Return value of `callback`.
+        Raises:
+            KeyError: if `int_type`, `name`, `vrid` is not passed.
+            ValueError: if `int_type`, `name`, `vrid` is invalid.
+=======
+
+        Returns:
+            Return value of `callback`.
 
         Raises:
             KeyError: if `int_type`, `name`, `vrid` is not passed.
             ValueError: if `int_type`, `name`, `vrid` is invalid.
+
 
         Examples:
             >>> import pynos.device
@@ -2996,7 +3041,11 @@ class Interface(object):
             ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
             ...         output = dev.services.vrrpe(ip_version='6',
             ...         enable=True, rbridge_id='225')
-            ...         output = dev.interface.vrrpe_vip(int_type='ve', name='89',
+            ...         output = dev.interface.vrrpe_vip(int_type='ve',
+            ...         name='89', vrid='1',
+            ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
+            ...         output = dev.interface.vrrpe_vip(int_type='ve',
+            ...         name='89',
             ...         vrid='1', vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
             ...         rbridge_id='225')
             ...         output = dev.services.vrrpe(enable=False,
@@ -3022,7 +3071,8 @@ class Interface(object):
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
-        method_name = 'interface_%s_vrrpe_short_path_forwarding_basic' % int_type
+        method_name = 'interface_%s_vrrpe_short_path_forwarding_basic' % \
+                      int_type
         if int_type == 've':
             method_name = 'rbridge_id_%s' % method_name
             method_class = self._rbridge
@@ -3060,6 +3110,12 @@ class Interface(object):
 
         Returns:
             Return value of `callback`.
+        Raises:
+            KeyError: if `int_type`, `name`, `vrid`, or `vip` is not passed.
+            ValueError: if `int_type`, `name`, `vrid`, or `vip` is invalid.
+
+        Returns:
+            Return value of `callback`.
 
         Raises:
             KeyError: if `int_type`, `name`, `vrid`, or `vip` is not passed.
@@ -3091,7 +3147,7 @@ class Interface(object):
             ...         output = dev.interface.ip_address(name='89',
             ...         int_type='ve', ip_addr='172.16.1.1/24',
             ...         rbridge_id='225')
-           ...         output = dev.interface.ip_address(name='89',
+            ...         output = dev.interface.ip_address(name='89',
             ...         int_type='ve', rbridge_id='225',
             ...         ip_addr='2002:4818:f000:1ab:cafe:beef:1000:2/64')
             ...         output = dev.services.vrrpe(ip_version='6',
@@ -3176,6 +3232,12 @@ class Interface(object):
             callback (function): A function executed upon completion
             of the  method.  The only parameter passed to `callback`
             will be the ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `int_type`, `name`, `vrid`, or `vmac` is not passed.
+            ValueError: if `int_type`, `name`, `vrid`, or `vmac` is invalid.
 
         Returns:
             Return value of `callback`.
