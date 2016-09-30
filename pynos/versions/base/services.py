@@ -94,7 +94,7 @@ class Services(object):
             config.find('.//*vrrp').set('operation', 'delete')
         return callback(config)
 
-   def vrrpe(self, **kwargs):
+    def vrrpe(self, **kwargs):
         """Enable or Disable Vrrpe.
 
         Args:
@@ -146,4 +146,3 @@ class Services(object):
         if not enable:
             config.find('.//*vrrp-extended').set('operation', 'delete')
         return callback(config)
-
