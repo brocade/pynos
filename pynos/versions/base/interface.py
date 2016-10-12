@@ -2721,6 +2721,57 @@ class Interface(object):
         return request_interface
 
     @property
+    def interface_detail(self):
+        """list[dict]: A list of dictionary items describing the
+        interface type, name, role, mac, admin and operational
+        state of interfaces of all rbridges.
+        This method currently only lists the Physical Interfaces (
+        Gigabitethernet, tengigabitethernet, fortygigabitethernet,
+        hundredgigabitethernet) and port-channel
+        """
+        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
+
+        result = []
+        has_more = ''
+        last_interface_name = ''
+        last_interface_type = ''
+
+        while (has_more == '') or (has_more == 'true'):
+            request_interface = self.get_interface_detail_request(
+                last_interface_name, last_interface_type)
+            interface_result = self._callback(request_interface, 'get')
+            has_more = interface_result.find('%shas-more' % urn).text
+
+            for item in interface_result.findall('%sinterface' % urn):
+                interface_type = item.find('%sinterface-type' % urn).text
+                interface_name = item.find('%sinterface-name' % urn).text
+                last_interface_type = interface_type
+                last_interface_name = interface_name
+                if "gigabitethernet" in interface_type or\
+                   "port-channel" in interface_type:
+                    if "gigabitethernet" in interface_type:
+                        interface_role = item.find('%sport-role' % urn).text
+                    else:
+                        interface_role = "None"
+                    if_name = item.find('%sif-name' % urn).text
+                    interface_state = item.find('%sif-state' % urn).text
+                    interface_proto_state = item.find('%sline-protocol-state' %
+                                                      urn).text
+                    interface_mac = item.find(
+                        '%scurrent-hardware-address' % urn).text
+                    item_results = {'interface-type': interface_type,
+                                    'interface-name': interface_name,
+                                    'interface-role': interface_role,
+                                    'if-name': if_name,
+                                    'interface-state': interface_state,
+                                    'interface-proto-state':
+                                        interface_proto_state,
+                                    'interface-mac': interface_mac}
+                result.append(item_results)
+
+        return result
+
+    @property
     def switchport_list(self):
         """list[dict]:A list of dictionary items describing the details 
             of list of dictionary items describing the details of switch port"""
@@ -3306,3 +3357,4 @@ class Interface(object):
         if not enable:
             config.find('.//*virtual-mac').set('operation', 'delete')
         return callback(config)
+
