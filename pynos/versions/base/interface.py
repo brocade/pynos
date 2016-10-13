@@ -3067,22 +3067,11 @@ class Interface(object):
             callback (function): A function executed upon completion of the
                 method.  The only parameter passed to `callback` will be the
                 ``ElementTree`` `config`.
-
         Returns:
             Return value of `callback`.
         Raises:
             KeyError: if `int_type`, `name`, `vrid` is not passed.
             ValueError: if `int_type`, `name`, `vrid` is invalid.
-=======
-
-        Returns:
-            Return value of `callback`.
-
-        Raises:
-            KeyError: if `int_type`, `name`, `vrid` is not passed.
-            ValueError: if `int_type`, `name`, `vrid` is invalid.
-
-
         Examples:
             >>> import pynos.device
             >>> switches = ['10.24.39.211', '10.24.39.203']
@@ -3192,7 +3181,7 @@ class Interface(object):
             ...         virtual_mac='aaaa.bbbb.cccc')
         """
 
-        version = int(kwargs.pop('version'))
+        version = int(kwargs.pop('version', '4'))
         int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name',)
         get = kwargs.pop('get', False)
@@ -3205,7 +3194,7 @@ class Interface(object):
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
-        if delete is True:
+        if delete:
             vrid = kwargs.pop('vrid')
             vip = kwargs.pop('vip')
             rbridge_id = kwargs.pop('rbridge_id', '1')
@@ -3248,7 +3237,7 @@ class Interface(object):
         config = vrrpe_vip(**vrrpe_args)
         result = []
 
-        if delete is True:
+        if delete:
             config.find('.//*virtual-ip').set('operation', 'delete')
         if get:
             output = callback(config, handler='get_config')
