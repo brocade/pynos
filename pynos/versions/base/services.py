@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pynos.versions.base.yang.brocade_rbridge import brocade_rbridge
+import xml.etree.ElementTree as ET
+
 import pynos.utilities
+from pynos.versions.base.yang.brocade_rbridge import brocade_rbridge
 
 
 class Services(object):
@@ -41,6 +43,33 @@ class Services(object):
         """
         self._callback = callback
         self._rbridge = brocade_rbridge(callback=pynos.utilities.return_xml)
+
+    @property
+    def arp(self):
+        """dict: trill link details
+                """
+        xmlns = 'urn:brocade.com:mgmt:brocade-arp'
+        get_arp_info = ET.Element('get-arp', xmlns=xmlns)
+        results = self._callback(get_arp_info, handler='get')
+        result = []
+        for item in results.findall('{%s}arp-entry' % xmlns):
+            ip_address = item.find('{%s}ip-address' % xmlns).text
+            mac_address = item.find('{%s}mac-address' % xmlns).text
+            interface_type = item.find('{%s}interface-type' % xmlns).text
+            interface_name = item.find('{%s}interface-name' % xmlns).text
+            is_resolved = item.find('{%s}is-resolved' % xmlns).text
+            age = item.find('{%s}age' % xmlns).text
+            entry_type = item.find('{%s}entry-type' % xmlns).text
+            item_results = {'ip-address': ip_address,
+                            'mac-address': mac_address,
+                            'interface-type': interface_type,
+                            'interface-name': interface_name,
+                            'is-resolved': is_resolved,
+                            'age': age,
+                            'entry-type': entry_type
+                            }
+            result.append(item_results)
+        return result
 
     def vrrp(self, **kwargs):
         """Enable or Disable VRRP.
@@ -96,10 +125,9 @@ class Services(object):
 
     def vrrpe(self, **kwargs):
         """Enable or Disable Vrrpe.
-
         Args:
-            ip_version (str): The IP version ('4' or '6') for which vrrpe should
-                be enabled/disabled.  Default: `4`.
+            ip_version (str): The IP version ('4' or '6') for which vrrpe
+                should be enabled/disabled.  Default: `4`.
             enable (bool): If vrrpe should be enabled or disabled.  Default:
                 ``True``.
             get (bool): Get config instead of editing config. (True, False)
@@ -122,7 +150,7 @@ class Services(object):
             >>> for switch in switches:
             ...     conn = (switch, '22')
             ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
-            ...         dev.services.vrrpe(rbridge_id='25',enable=False) # doctest: +IGNORE_EXCEPTION_DETAIL
+            ...         dev.services.vrrpe(rbridge_id='25',enable=False)
             ...         dev.services.vrrpe(rbridge_id='25',enable=True)
             ...         dev.services.vrrpe()
             Traceback (most recent call last):

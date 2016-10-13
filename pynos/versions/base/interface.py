@@ -1779,7 +1779,6 @@ class Interface(object):
 
     def vrrp_vip(self, **kwargs):
         """Set VRRP VIP.
-
         Args:
             int_type (str): Type of interface. (gigabitethernet,
                 tengigabitethernet, etc).
@@ -1791,14 +1790,11 @@ class Interface(object):
             callback (function): A function executed upon completion of the
                 method.  The only parameter passed to `callback` will be the
                 ``ElementTree`` `config`.
-
         Returns:
             Return value of `callback`.
-
         Raises:
             KeyError: if `int_type`, `name`, `vrid`, or `vip` is not passed.
             ValueError: if `int_type`, `name`, `vrid`, or `vip` is invalid.
-
         Examples:
             >>> import pynos.device
             >>> switches = ['10.24.39.211', '10.24.39.203']
@@ -2676,9 +2672,10 @@ class Interface(object):
         interface_result = self._callback(request_interface, 'get')
         for interface in interface_result.findall('%sinterface' % urn):
             int_type = interface.find('%sinterface-type' % urn).text
+            int_name = interface.find('%sinterface-name' % urn).text
             if int_type == 'unknown':
                 continue
-            int_name = interface.find('%sinterface-name' % urn).text
+
             int_state = interface.find('%sif-state' % urn).text
             int_proto_state = interface.find('%sline-protocol-state' %
                                              urn).text
@@ -3357,4 +3354,32 @@ class Interface(object):
         if not enable:
             config.find('.//*virtual-mac').set('operation', 'delete')
         return callback(config)
+
+    @property
+    def ve_interfaces(self):
+        """list[dict]: A list of dictionary items describing the operational
+        state of ve interfaces along with the ip address associations.
+        """
+        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
+        int_ns = 'urn:brocade.com:mgmt:brocade-interface-ext'
+
+        ip_result = []
+        request_interface = ET.Element('get-ip-interface', xmlns=int_ns)
+        interface_result = self._callback(request_interface, 'get')
+        for interface in interface_result.findall('%sinterface' % urn):
+            int_type = interface.find('%sinterface-type' % urn).text
+            int_name = interface.find('%sinterface-name' % urn).text
+            int_state = interface.find('%sif-state' % urn).text
+            int_proto_state = interface.find('%sline-protocol-state' %
+                                             urn).text
+            ip_address = interface.find('.//%sipv4' % urn).text
+            if_name = interface.find('%sif-name' % urn).text
+            results = {'interface-type': int_type,
+                       'interface-name': int_name,
+                       'if-name': if_name,
+                       'interface-state': int_state,
+                       'interface-proto-state': int_proto_state,
+                       'ip-address': ip_address}
+            ip_result.append(results)
+        return ip_result
 
