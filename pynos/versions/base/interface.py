@@ -3042,7 +3042,7 @@ class Interface(object):
             ...         output = dev.services.vrrpe(ip_version='6',
             ...         enable=True, rbridge_id='225')
             ...         output = dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89', vrid='1',
+            ...         name='89', vrid='1', version='6'
             ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
             ...         rbridge_id='225')
             ...         output = dev.services.vrrpe(enable=False,
@@ -3117,25 +3117,15 @@ class Interface(object):
             >>> for switch in switches:
             ...     conn = (switch, '22')
             ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
-            ...         output = dev.services.vrrpe(enable=False,
-            ...         rbridge_id='225')
-            ...         output =dev.interface.vrrpe_vip(get=True,int_type='ve',
-            ...         name='89', version = '4', rbridge_id = '1')
-            ...         output = dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89', version = '4', rbridge_id = '1')
+            ...         output =dev.interface.vrrpe_vip(int_type='ve',
+            ...         name='89', version = '4', rbridge_id = '1',
+            ...         vrid='11', vip='10.0.1.10')
+            ...         output = dev.interface.vrrpe_vip(get=True,
+            ...         int_type='ve', name='89', version = '4',
+            ...         rbridge_id = '1')
             ...         output =dev.interface.vrrpe_vip(delete=True,
-            ...         int_type='ve',
-            ...         name='89', version = '4', rbridge_id = '1',vrid='1',
-            ...         vip='10.0.0.10')
-            ...         output = dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89',vrid='1',
-            ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
-            ...         rbridge_id='225')
-            ...         output = dev.services.vrrpe(enable=False,
-            ...         rbridge_id='225')
-            ...         output = dev.interface.vrrpe_vmac(int_type='ve',
-            ...         name='89', vrid='1', rbridge_id='1',
-            ...         virtual_mac='aaaa.bbbb.cccc')
+            ...         int_type='ve', name='89', version = '4',
+            ...         rbridge_id = '1',vrid='1', vip='10.0.0.10')
         """
 
         version = int(kwargs.pop('version', '4'))
@@ -3244,7 +3234,7 @@ class Interface(object):
             ...         output = dev.services.vrrpe(enable=False,
             ...         rbridge_id='225')
             ...         output = dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89',vrid='1',
+            ...         name='89',vrid='1', version ='6'
             ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
             ...         rbridge_id='225')
             ...         output = dev.services.vrrpe(enable=False,
