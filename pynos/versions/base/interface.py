@@ -3042,7 +3042,7 @@ class Interface(object):
             ...         output = dev.services.vrrpe(ip_version='6',
             ...         enable=True, rbridge_id='225')
             ...         output = dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89', vrid='1', version='6'
+            ...         name='89', vrid='1',
             ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
             ...         rbridge_id='225')
             ...         output = dev.services.vrrpe(enable=False,
@@ -3236,7 +3236,7 @@ class Interface(object):
             ...         output = dev.services.vrrpe(enable=False,
             ...         rbridge_id='225')
             ...         output = dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89',vrid='1', version ='6'
+            ...         name='89',vrid='1',
             ...         vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
             ...         rbridge_id='225')
             ...         output = dev.services.vrrpe(enable=False,
