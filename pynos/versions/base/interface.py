@@ -3099,7 +3099,6 @@ class Interface(object):
                 be deleted (True, False). Default value will be False if not
                 specified.
             vip (str): IPv4/IPv6 Virtual IP Address.
-            version (int): 4 or 6 to represent IPv4 or IPv6 address
             rbridge_id (str): rbridge-id for device. Only required when type is
                 `ve`.
             callback (function): A function executed upon completion of the
@@ -3118,19 +3117,18 @@ class Interface(object):
             ...     conn = (switch, '22')
             ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
             ...         output =dev.interface.vrrpe_vip(int_type='ve',
-            ...         name='89', version = '4', rbridge_id = '1',
+            ...         name='89', rbridge_id = '1',
             ...         vrid='11', vip='10.0.1.10')
             ...         output = dev.interface.vrrpe_vip(get=True,
-            ...         int_type='ve', name='89', version = '4',
-            ...         rbridge_id = '1')
+            ...         int_type='ve', name='89', rbridge_id = '1')
             ...         output =dev.interface.vrrpe_vip(delete=True,
-            ...         int_type='ve', name='89', version = '4',
-            ...         rbridge_id = '1',vrid='1', vip='10.0.0.10')
+            ...         int_type='ve', name='89', rbridge_id = '1',vrid='1',
+            ...         vip='10.0.0.10')
         """
 
-        version = int(kwargs.pop('version', '4'))
         int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name',)
+        vip = kwargs.pop('vip', '')
         get = kwargs.pop('get', False)
         delete = kwargs.pop('delete', False)
         callback = kwargs.pop('callback', self._callback)
@@ -3138,12 +3136,17 @@ class Interface(object):
                            'fortygigabitethernet', 'hundredgigabitethernet',
                            'port_channel', 've']
 
+        if vip != '':
+            ipaddress = ip_interface(unicode(vip))
+            version = ipaddress.version
+        else:
+            version = 4
+
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
         if delete:
             vrid = kwargs.pop('vrid')
-            vip = kwargs.pop('vip')
             rbridge_id = kwargs.pop('rbridge_id', '1')
             vrrpe_args = dict(rbridge_id=rbridge_id, name=name,
                               vrid=vrid, virtual_ipaddr=vip)
@@ -3152,7 +3155,6 @@ class Interface(object):
             vrrpe_args = dict(name=name, vrid='', virtual_ipaddr='')
         else:
             vrid = kwargs.pop('vrid')
-            vip = kwargs.pop('vip')
             ipaddress = ip_interface(unicode(vip))
             if int_type == 've':
                 rbridge_id = kwargs.pop('rbridge_id', '1')
