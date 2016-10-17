@@ -415,7 +415,7 @@ class Interface(InterfaceBase):
         Args:
             vrf_name (str): Name of the vrf (vrf101, vrf-1 etc).
             get (bool): Get config instead of editing config. (True, False)
-            delete (bool): True, the VIP address is added and False if its to
+            delete (bool): True, the vrf is created and False if its to
                 be deleted (True, False). Default value will be False if not
                 specified.
             rbridge_id (str): rbridge-id for device.
@@ -477,7 +477,7 @@ class Interface(InterfaceBase):
             vrf_name (str): Name of the vrf (vrf101, vrf-1 etc).
             rd (str): Route distiniguisher <ASN:nn or IP-address:nn>
             get (bool): Get config instead of editing config. (True, False)
-            delete (bool): True, the VIP address is added and False if its to
+            delete (bool): True, the vrf rd is configured and False if its to
                 be deleted (True, False). Default value will be False if not
                 specified.
             callback (function): A function executed upon completion of the
@@ -495,14 +495,15 @@ class Interface(InterfaceBase):
             >>> for switch in switches:
             ...     conn = (switch, '22')
             ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
-            ...         output = dev.interface.vrf(vrf_name=vrf1,
-            ...         rbridge_id='225')
             ...         output = dev.interface.vrf_route_distiniguisher(
-            ...         vrf_name=vrf1, rbridge_id='2')
+            ...         vrf_name=vrf1, rbridge_id='2', rd='10.0.1.1:101')
+            ...         output = dev.interface.vrf_route_distiniguisher(
+            ...         vrf_name=vrf1, rbridge_id='2', rd='100:101')
             ...         output = dev.interface.vrf_route_distiniguisher(
             ...         rbridge_id='2', get=True)
             ...         output = dev.interface.vrf_route_distiniguisher(
-            ...         vrf_name=vrf1, rbridge_id='2', delete=True)
+            ...         vrf_name=vrf1, rbridge_id='2', rd='100:101',
+            ...         delete=True)
 
         """
         rbridge_id = kwargs['rbridge_id']
