@@ -19,7 +19,7 @@ from pynos.versions.ver_7.ver_7_0_0.yang.brocade_rbridge \
     import brocade_rbridge as brcd_rbridge
 import pynos.utilities
 from pynos.versions.base.interface import Interface as InterfaceBase
-
+import re
 
 class Interface(InterfaceBase):
     """
@@ -409,3 +409,133 @@ class Interface(InterfaceBase):
         multiplier = pynos.utilities.return_xml(str(multiplier))
         config = pynos.utilities.merge_xml(tx, rx)
         return pynos.utilities.merge_xml(config, multiplier)
+
+    def vrf(self, **kwargs):
+        """Create a vrf.
+        Args:
+            vrf_name (str): Name of the vrf (vrf101, vrf-1 etc).
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, the VIP address is added and False if its to
+                be deleted (True, False). Default value will be False if not
+                specified.
+            rbridge_id (str): rbridge-id for device.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `rbridge_id`,`vrf_name` is not passed.
+            ValueError: if `rbridge_id`, `vrf_name` is invalid.
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.vrf(vrf_name=vrf1,
+            ...         rbridge_id='225')
+            ...         output = dev.interface.vrf(rbridge_id='225',
+            ...         ,get=True)
+            ...         output = dev.interface.vrf(vrf_name=vrf1,
+            ...         rbridge_id='225',delete=True)
+
+        """
+        rbridge_id = kwargs['rbridge_id']
+        get_config = kwargs.pop('get', False)
+        delete = kwargs.pop('delete', False)
+        callback = kwargs.pop('callback', self._callback)
+        result = []
+        method_class = self._rbridge
+        method_name = 'rbridge_id_vrf_vrf_name'
+        vrf = getattr(method_class, method_name)
+
+        if not get_config:
+            vrf_name = kwargs['vrf_name']
+            vrf_args = dict(rbridge_id=rbridge_id, vrf_name=vrf_name)
+            config = vrf(**vrf_args)
+
+            if delete:
+                config.find('.//*vrf').set('operation', 'delete')
+            result = callback(config)
+
+        elif get_config:
+            vrf_args = dict(rbridge_id=rbridge_id, vrf_name='')
+            config = vrf(**vrf_args)
+            output = callback(config, handler='get_config')
+            for item in output.data.findall('.//{*}vrf'):
+                vrfname = item.find('.//{*}vrf-name').text
+                tmp = {'rbridge_id': rbridge_id, 'vrf_name': vrfname}
+                result.append(tmp)
+        return result
+
+    def vrf_route_distiniguisher(self, **kwargs):
+        """Configure Route distiniguisher.
+        Args:
+            rbridge_id (str): rbridge-id for device.
+            vrf_name (str): Name of the vrf (vrf101, vrf-1 etc).
+            rd (str): Route distiniguisher <ASN:nn or IP-address:nn> 
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, the VIP address is added and False if its to
+                be deleted (True, False). Default value will be False if not
+                specified.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `rbridge_id`,`vrf_name` is not passed.
+            ValueError: if `rbridge_id`, `vrf_name` is invalid.
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.vrf(vrf_name=vrf1,
+            ...         rbridge_id='225')
+            ...         output = dev.interface.vrf_route_distiniguisher(vrf_name=vrf1,
+            ...         rbridge_id='2')
+            ...         output = dev.interface.vrf_route_distiniguisher(rbridge_id='2',
+            ...                  get=True)
+            ...         output = dev.interface.vrf_route_distiniguisher(vrf_name=vrf1,
+            ...         rbridge_id='2',delete=True)
+
+        """
+        rbridge_id = kwargs['rbridge_id']
+        get_config = kwargs.pop('get', False)
+        delete = kwargs.pop('delete', False)
+        callback = kwargs.pop('callback', self._callback)
+        result = []
+ 
+        method_class = self._rbridge
+        method_name = 'rbridge_id_vrf_route_distiniguisher'
+        vrf_rd = getattr(method_class, method_name)
+
+        if not get_config:
+            vrf_name = kwargs['vrf_name']
+            rd = kwargs['rd']
+            rd_args = dict(rbridge_id=rbridge_id, vrf_name=vrf_name, route_distiniguisher=rd)
+            config = vrf_rd(**rd_args)
+
+            if delete:
+                config.find('.//*route-distiniguisher').set('operation', 'delete')
+            result = callback(config)
+
+        elif get_config:
+            rd_args = dict(rbridge_id=rbridge_id, vrf_name='', route_distiniguisher='')
+            config = vrf_rd(**rd_args)
+            output = callback(config, handler='get_config')
+            for item in output.data.findall('.//{*}vrf'):
+                vrfname = item.find('.//{*}vrf-name').text
+                if item.find('.//{*}route-distiniguisher') is not None:
+                    vrfrd = item.find('.//{*}route-distiniguisher').text
+                else:
+                    vrfrd = ''
+
+                tmp = {'rbridge_id': rbridge_id, 'vrf_name': vrfname, 'rd': vrfrd}
+                result.append(tmp)
+        return result
