@@ -986,7 +986,6 @@ class BGP(BaseBGP):
             get (bool): Get config instead of editing config. (True, False)
             callback (function): A function executed upon completion of the
                 method.  The only parameter passed to `callback` will be the
-
                 ``ElementTree`` `config`.
         Returns:
             Return value of `callback`.
