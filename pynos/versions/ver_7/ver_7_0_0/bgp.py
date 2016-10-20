@@ -27,6 +27,7 @@ class BGP(BaseBGP):
     Attributes:
         None
     """
+
     def __init__(self, callback):
         super(BGP, self).__init__(callback)
         self._rbridge = brocade_rbridge(callback=pynos.utilities.return_xml)
@@ -303,8 +304,8 @@ class BGP(BaseBGP):
         Raises:
             None
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'bfd_interval_min_tx'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'bfd_interval_min_tx'
         bfd_tx = getattr(self._rbridge, method_name)
         config = bfd_tx(**kwargs)
         if kwargs['delete']:
@@ -328,8 +329,8 @@ class BGP(BaseBGP):
         Raises:
             None
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'bfd_interval_min_rx'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'bfd_interval_min_rx'
         bfd_rx = getattr(self._rbridge, method_name)
         config = bfd_rx(**kwargs)
         if kwargs['delete']:
@@ -354,8 +355,8 @@ class BGP(BaseBGP):
         Raises:
             None
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'bfd_interval_multiplier'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'bfd_interval_multiplier'
         bfd_multiplier = getattr(self._rbridge, method_name)
         config = bfd_multiplier(**kwargs)
         if kwargs['delete']:
@@ -764,8 +765,8 @@ class BGP(BaseBGP):
             ...        output = dev.bgp.neighbor(ip_addr='10.10.10.20',
             ...        delete=True, rbridge_id='230', remote_as='65535')
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'neighbor_neighbor_ips_neighbor_addr_bfd_bfd_enable'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'neighbor_neighbor_ips_neighbor_addr_bfd_bfd_enable'
         bfd_enable = getattr(self._rbridge, method_name)
         kwargs['router_bgp_neighbor_address'] = kwargs.pop('peer_ip')
         callback = kwargs.pop('callback', self._callback)
@@ -795,8 +796,8 @@ class BGP(BaseBGP):
         Raises:
             None
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'neighbor_neighbor_ips_neighbor_addr_bfd_interval_min_tx'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'neighbor_neighbor_ips_neighbor_addr_bfd_interval_min_tx'
         bfd_tx = getattr(self._rbridge, method_name)
         config = bfd_tx(**kwargs)
         if kwargs['delete']:
@@ -821,8 +822,8 @@ class BGP(BaseBGP):
         Raises:
             None
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'neighbor_neighbor_ips_neighbor_addr_bfd_interval_min_rx'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'neighbor_neighbor_ips_neighbor_addr_bfd_interval_min_rx'
         bfd_rx = getattr(self._rbridge, method_name)
         config = bfd_rx(**kwargs)
         if kwargs['delete']:
@@ -848,8 +849,8 @@ class BGP(BaseBGP):
         Raises:
             None
         """
-        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_'\
-            'neighbor_neighbor_ips_neighbor_addr_bfd_interval_multiplier'
+        method_name = 'rbridge_id_router_router_bgp_router_bgp_attributes_' \
+                      'neighbor_neighbor_ips_neighbor_addr_bfd_interval_multiplier'
 
         bfd_multiplier = getattr(self._rbridge, method_name)
         config = bfd_multiplier(**kwargs)
@@ -884,3 +885,83 @@ class BGP(BaseBGP):
         multiplier = pynos.utilities.return_xml(str(multiplier))
         config = pynos.utilities.merge_xml(tx, rx)
         return pynos.utilities.merge_xml(config, multiplier)
+
+    def vni_add(self, **kwargs):
+        """Add VNIs to the EVPN Instance
+        Args:
+            rbridge_id (str): rbridge-id for device.
+            evpn_instance (str): Name of the evpn instance.
+            vni (str): vnis to the evpn instance
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the vni configuration
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `rbridge_id`,`evpn_instance`, 'vni' is not passed.
+            ValueError: if `rbridge_id`, `evpn_instance`, 'vni' is invalid.
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.bgp.vni_add(rbridge_id='2',
+            ...         evpn_instance="leaf1", vni='10')
+            ...         output = dev.bgp.vni_add(rbridge_id='2',
+            ...         evpn_instance="leaf1", vni='10', delete=True)
+            ...         output = dev.bgp.vni_add(rbridge_id='2',
+            ...         evpn_instance="leaf1", vni='10', delete=True)
+            ...         output = dev.bgp.vni_add(rbridge_id='2',
+            ...         get=True)
+
+        """
+        rbridge_id = kwargs['rbridge_id']
+        get_config = kwargs.pop('get', False)
+        delete = kwargs.pop('delete', False)
+        callback = kwargs.pop('callback', self._callback)
+        result = []
+
+        method_class = self._rbridge
+        if not get_config:
+            evpn_instance = kwargs['evpn_instance']
+            vni = kwargs['vni']
+            if not delete:
+                method_name = 'rbridge_id_evpn_instance_vni_vni_add_add'
+                vni_add = getattr(method_class, method_name)
+                vni_args = dict(rbridge_id=rbridge_id,
+                                instance_name=evpn_instance,
+                                add=vni)
+                config = vni_add(**vni_args)
+            else:
+                method_name = 'rbridge_id_evpn_instance_vni_vni_add_remove'
+                vni_add = getattr(method_class, method_name)
+                vni_args = dict(rbridge_id=rbridge_id,
+                                instance_name=evpn_instance,
+                                remove=vni)
+                config = vni_add(**vni_args)
+                config.find('.//*vni-add').set('operation', 'delete')
+            result = callback(config)
+
+        elif get_config:
+            method_name = 'rbridge_id_evpn_instance_vni_vni_add_add'
+            vni_add = getattr(method_class, method_name)
+            vni_args = dict(rbridge_id=rbridge_id, instance_name='',
+                            add='')
+            config = vni_add(**vni_args)
+            evpninstance = ''
+            evpn_vni = ''
+            output = callback(config, handler='get_config')
+            for item in output.data.findall('.//{*}evpn-instance'):
+                if item.find('.//{*}instance-name') is not None:
+                    evpninstance = item.find('.//{*}instance-name').text
+
+                if item.find('.//{*}add') is not None:
+                    evpn_vni = item.find('.//{*}add').text
+            tmp = {'rbridge_id': rbridge_id, 'evpn_instance': evpninstance,
+                   'vni': evpn_vni}
+            result.append(tmp)
+        return result
