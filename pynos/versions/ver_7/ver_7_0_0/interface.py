@@ -502,6 +502,8 @@ class Interface(InterfaceBase):
             ...         output = dev.interface.vrf_route_distiniguisher(
             ...         rbridge_id='2', get=True)
             ...         output = dev.interface.vrf_route_distiniguisher(
+            ...         rbridge_id='2', vrf_name='vrf2', get=True)
+            ...         output = dev.interface.vrf_route_distiniguisher(
             ...         vrf_name=vrf1, rbridge_id='2', rd='100:101',
             ...         delete=True)
 
@@ -529,7 +531,8 @@ class Interface(InterfaceBase):
             result = callback(config)
 
         elif get_config:
-            rd_args = dict(rbridge_id=rbridge_id, vrf_name='',
+            vrf_name = kwargs.pop('vrf_name', '')
+            rd_args = dict(rbridge_id=rbridge_id, vrf_name=vrf_name,
                            route_distiniguisher='')
             config = vrf_rd(**rd_args)
             output = callback(config, handler='get_config')
@@ -574,6 +577,8 @@ class Interface(InterfaceBase):
             ...         vrf_name=vrf1, rbridge_id='2', l3vni ='7201')
             ...         output = dev.interface.vrf_vni(rbridge_id='2',
             ...         get=True)
+            ...         output = dev.interface.vrf_vni(rbridge_id='2',
+            ...         , vrf_name='vrf2' get=True)
             ...         output = dev.interface.vrf_vni(vrf_name=vrf1,
             ...         rbridge_id='2', l3vni ='7201', delete=True)
 
@@ -600,7 +605,8 @@ class Interface(InterfaceBase):
             result = callback(config)
 
         elif get_config:
-            vni_args = dict(rbridge_id=rbridge_id, vrf_name='',
+            vrf_name = kwargs.pop('vrf_name', '')
+            vni_args = dict(rbridge_id=rbridge_id, vrf_name=vrf_name,
                             vni='')
             config = vrf_vni(**vni_args)
             output = callback(config, handler='get_config')
@@ -662,6 +668,8 @@ class Interface(InterfaceBase):
             ...         vrf_name="vrf1",delete_afi=True)
             ...         output = dev.interface.vrf_vni(rbridge_id="1",
             ...         afi="ip", get=True)
+            ...         output = dev.interface.vrf_vni(rbridge_id="1",
+            ...         afi="ip", vrf_name="vrf2", get=True)
 
         """
         rbridge_id = kwargs['rbridge_id']
@@ -695,7 +703,9 @@ class Interface(InterfaceBase):
             result = callback(config)
 
         elif get_config:
-            rt_args = dict(rbridge_id=rbridge_id, vrf_name='',
+            vrf_name = kwargs.pop('vrf_name', '')
+
+            rt_args = dict(rbridge_id=rbridge_id, vrf_name=vrf_name,
                            action='', target_community='')
             config = vrf_rt(**rt_args)
             output = callback(config, handler='get_config')
