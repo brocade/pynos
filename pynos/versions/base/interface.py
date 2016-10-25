@@ -3310,3 +3310,43 @@ class Interface(object):
                        'ip-address': ip_address}
             ip_result.append(results)
         return ip_result
+
+    def conversational_mac(self, **kwargs):
+        """Enable conversational mac learning on vdx switches
+
+        Args:
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the mac-learning. (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            None
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.conversational_mac()
+            ...     output = dev.interface.conversational_mac(get=True)
+            ...     output = dev.interface.conversational_mac(delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        mac_learning = getattr(self._mac_address_table,
+                               'mac_address_table_learning_mode')
+
+        config = mac_learning(learning_mode='conversational')
+        if kwargs.pop('get', False):
+            output = callback(config, handler='get_config')
+            item = output.data.find('.//{*}learning-mode')
+            if item is not None:
+                return True
+        if kwargs.pop('delete', False):
+            config.find('.//*learning-mode').set('operation', 'delete')
+        return callback(config)
