@@ -740,3 +740,48 @@ class Interface(InterfaceBase):
                 result.append(tmp)
 
         return result
+
+    def conversational_arp(self, **kwargs):
+        """Enable conversational arp learning on VDX switches
+
+        Args:
+            rbridge_id (str): rbridge-id for device.
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the conversation arp learning.
+                          (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `rbridge_id` is not passed.
+            ValueError: if `rbridge_id` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.conversational_arp(rbridge_id="1")
+            ...     output = dev.interface.conversational_arp(rbridge_id="1",
+                             get=True)
+            ...     output = dev.interface.conversational_arp(rbridge_id="1",
+                             delete=True)
+        """
+
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        arp_config = getattr(self._rbridge,
+                             'rbridge_id_host_table_aging_mode_conversational')
+
+        arp_args = dict(rbridge_id=rbridge_id)
+        config = arp_config(**arp_args)
+        if kwargs.pop('get', False):
+            output = callback(config, handler='get_config')
+            item = output.data.find('.//{*}aging-mode')
+            if item is not None:
+                return True
+        if kwargs.pop('delete', False):
+            config.find('.//*aging-mode').set('operation', 'delete')
+        return callback(config)
