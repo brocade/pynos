@@ -1009,13 +1009,22 @@ class BGP(BaseBGP):
         if afi not in ['ipv4', 'ipv6']:
             raise AttributeError('Invalid AFI.')
 
-        neighbor_args = dict(af_vrf_name=vrf,
-                             rbridge_id=rbridge_id)
-        addr_family = getattr(self._rbridge,
-                              'rbridge_id_router_router_bgp_address_family_'
-                              '{0}_{0}_unicast_af_vrf_af_{0}_uc_and_vrf_'
-                              'cmds_call_point_holder_redistribute_'
-                              'connected_redistribute_connected'.format(afi))
+        if "ipv4" in afi:
+            addr_family = getattr(self._rbridge,
+                                  'rbridge_id_router_router_bgp_address_family_'
+                                  'ipv4_ipv4_unicast_af_vrf_af_ipv4_uc_and_vrf_'
+                                  'cmds_call_point_holder_redistribute_'
+                                  'connected_redistribute_connected')
+            neighbor_args = dict(af_vrf_name=vrf,
+                                 rbridge_id=rbridge_id)
+        elif "ipv6" in afi:
+            addr_family = getattr(self._rbridge,
+                                  'rbridge_id_router_router_bgp_address_family_'
+                                  'ipv6_ipv6_unicast_af_ipv6_vrf_af_ipv6_uc_and'
+                                  '_vrf_cmds_call_point_holder_redistribute_'
+                                  'connected_redistribute_connected')
+            neighbor_args = dict(af_ipv6_vrf_name=vrf,
+                                 rbridge_id=rbridge_id)
 
         config = addr_family(**neighbor_args)
 
@@ -1074,22 +1083,38 @@ class BGP(BaseBGP):
         if afi not in ['ipv4', 'ipv6']:
             raise AttributeError('Invalid AFI.')
 
-        neighbor_args = dict(af_vrf_name=vrf,
-                             rbridge_id=rbridge_id)
-        addr_family = getattr(self._rbridge,
-                              'rbridge_id_router_router_bgp_address_family_'
-                              '{0}_{0}_unicast_af_vrf_af_vrf_name'.format(afi))
+        if "ipv4" in afi:
+            addr_family = getattr(self._rbridge,
+                                  'rbridge_id_router_router_bgp_address_family_'
+                                  'ipv4_ipv4_unicast_af_vrf_af_vrf_name')
+            neighbor_args = dict(af_vrf_name=vrf,
+                                 rbridge_id=rbridge_id)
+        elif "ipv6" in afi:
+            addr_family = getattr(self._rbridge,
+                                  'rbridge_id_router_router_bgp_address_family_'
+                                  'ipv6_ipv6_unicast_af_ipv6_vrf_af_ipv6_'
+                                  'vrf_name')
+            neighbor_args = dict(af_ipv6_vrf_name=vrf,
+                                 rbridge_id=rbridge_id)
 
         config = addr_family(**neighbor_args)
 
         result = False
         if kwargs.pop('get', False):
             output = callback(config, handler='get_config')
-            if output.data.findall('.//{*}af-vrf-name') != []:
-                result = True
+            if "ipv4" in afi:
+                if output.data.findall('.//{*}af-vrf-name') != []:
+                    result = True
+            elif "ipv6" in afi:
+                if output.data.findall('.//{*}af-ipv6-vrf-name') != []:
+                    result = True
         elif delete:
-            config.find('.//*af-vrf').set('operation', 'delete')
-            result = callback(config)
+            if "ipv4" in afi:
+                config.find('.//*af-vrf').set('operation', 'delete')
+                result = callback(config)
+            elif "ipv6" in afi:
+                config.find('.//*af-ipv6-vrf').set('operation', 'delete')
+                result = callback(config)
         else:
             result = callback(config)
         return result
@@ -1141,13 +1166,23 @@ class BGP(BaseBGP):
         callback = kwargs.pop('callback', self._callback)
         if afi not in ['ipv4', 'ipv6']:
             raise AttributeError('Invalid AFI.')
-        args = dict(af_vrf_name=vrf,
-                    rbridge_id=kwargs.pop('rbridge_id', '1'),
-                    load_sharing_value=kwargs.pop('paths', '8'))
-        max_paths = getattr(self._rbridge,
-                            'rbridge_id_router_router_bgp_address_family_'
-                            '{0}_{0}_unicast_af_vrf_maximum_paths_'
-                            'load_sharing_value'.format(afi))
+        if "ipv4" in afi:
+            args = dict(af_vrf_name=vrf,
+                        rbridge_id=kwargs.pop('rbridge_id', '1'),
+                        load_sharing_value=kwargs.pop('paths', '8'))
+            max_paths = getattr(self._rbridge,
+                                'rbridge_id_router_router_bgp_address_family_'
+                                'ipv4_ipv4_unicast_af_vrf_maximum_paths_'
+                                'load_sharing_value')
+        elif "ipv6" in afi:
+            args = dict(af_ipv6_vrf_name=vrf,
+                        rbridge_id=kwargs.pop('rbridge_id', '1'),
+                        load_sharing_value=kwargs.pop('paths', '8'))
+            max_paths = getattr(self._rbridge,
+                                'rbridge_id_router_router_bgp_address_family_'
+                                'ipv6_ipv6_unicast_af_ipv6_vrf_maximum_paths_'
+                                'load_sharing_value')
+
         config = max_paths(**args)
         if kwargs.pop('get', False):
             output = callback(config, handler='get_config')
