@@ -23,6 +23,8 @@ import pynos.utilities
 from pynos.exceptions import InvalidVlanId
 from pynos.versions.base.yang.brocade_interface import brocade_interface
 from pynos.versions.base.yang.brocade_rbridge import brocade_rbridge
+from pynos.versions.base.yang.brocade_mac_address_table \
+    import brocade_mac_address_table
 
 
 class Interface(object):
@@ -53,6 +55,9 @@ class Interface(object):
             callback=pynos.utilities.return_xml
         )
         self._rbridge = brocade_rbridge(
+            callback=pynos.utilities.return_xml
+        )
+        self._mac_address_table = brocade_mac_address_table(
             callback=pynos.utilities.return_xml
         )
 
