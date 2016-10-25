@@ -17,7 +17,6 @@ limitations under the License.
 from ipaddress import ip_interface
 from pynos.versions.ver_6.ver_6_0_1.bgp import BGP as BaseBGP
 from pynos.versions.ver_7.ver_7_0_0.yang.brocade_rbridge import brocade_rbridge
-from pynos.versions.base.yang.brocade_mac_address_table import brocade_mac_address_table
 
 import pynos.utilities
 import xml.etree.ElementTree as ET
@@ -33,10 +32,6 @@ class BGP(BaseBGP):
     def __init__(self, callback):
         super(BGP, self).__init__(callback)
         self._rbridge = brocade_rbridge(callback=pynos.utilities.return_xml)
-
-        self._mac_address_table = brocade_mac_address_table(
-            callback=pynos.utilities.return_xml
-        )
 
     def neighbor(self, **kwargs):
         """Experimental neighbor method.
