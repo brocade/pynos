@@ -19,6 +19,8 @@ from pynos.versions.ver_7.ver_7_0_0.yang.brocade_rbridge \
     import brocade_rbridge as brcd_rbridge
 import pynos.utilities
 from pynos.versions.base.interface import Interface as InterfaceBase
+from pynos.exceptions import InvalidVlanId
+from ipaddress import ip_interface
 
 
 class Interface(InterfaceBase):
@@ -784,4 +786,151 @@ class Interface(InterfaceBase):
                 return True
         if kwargs.pop('delete', False):
             config.find('.//*aging-mode').set('operation', 'delete')
+        return callback(config)
+
+    def ip_anycast_gateway(self, **kwargs):
+        """
+        Add anycast gateway under interface ve.
+
+        Args:
+            int_type: L3 interface type on which the anycast ip
+               needs to be configured.
+            name:L3 interface name on which the anycast ip
+               needs to be configured.
+            anycast_ip: Anycast ip which the L3 interface
+               needs to be associated.
+            enable (bool): If ip anycast gateway should be enabled
+                or disabled.Default:``True``.
+            get (bool) : Get config instead of editing config. (True, False)
+            rbridge_id (str): rbridge-id for device. Only required when type is
+                `ve`.
+            callback (function): A function executed upon completion of the
+               method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `int_type`, `name`, `anycast_ip` is not passed.
+            ValueError: if `int_type`, `name`, `anycast_ip` is invalid.
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.ip_anycast_gateway(
+            ...         int_type='ve',
+            ...         name='89',
+            ...         anycast_ip='10.20.1.1/24',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.ip_anycast_gateway(
+            ...         get=True,int_type='ve',
+            ...         name='89',
+            ...         anycast_ip='10.20.1.1/24',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.ip_anycast_gateway(
+            ...         enable=False,int_type='ve',
+            ...         name='89',
+            ...         anycast_ip='10.20.1.1/24',
+            ...         rbridge_id='1')
+            ...         # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+            KeyError
+         """
+
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        anycast_ip = kwargs.pop('anycast_ip')
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['ve']
+        method_class = self._rbridge
+
+        if get:
+            enable = None
+        ipaddress = ip_interface(unicode(anycast_ip))
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        if ipaddress.version == 4:
+            anycast_args = dict(name=name, ip_address=anycast_ip)
+            method_name = 'interface_%s_ip_ip_anycast_'\
+                          'address_ip_address' % int_type
+        elif ipaddress.version == 6:
+            anycast_args = dict(name=name, ipv6_address=anycast_ip)
+            method_name = 'interface_%s_ipv6_ipv6_'\
+                          'anycast_address_ipv6_address' % int_type
+        method_name = 'rbridge_id_%s' % method_name
+        anycast_args['rbridge_id'] = rbridge_id
+        if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        ip_anycast_gateway = getattr(method_class, method_name)
+        config = ip_anycast_gateway(**anycast_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+            if ipaddress.version == 4:
+                config.find('.//*ip-anycast-address').\
+                  set('operation', 'delete')
+            elif ipaddress.version == 6:
+                config.find('.//*ipv6-anycast-address').\
+                  set('operation', 'delete')
+        return callback(config)
+
+    def arp_suppression(self, **kwargs):
+        """
+        Enable Arp Suppression on a Vlan.
+
+        Args:
+            name:Vlan name on which the Arp suppression needs to be enabled.
+            enable (bool): If arp suppression should be enabled
+                or disabled.Default:``True``.
+            get (bool) : Get config instead of editing config. (True, False)
+            callback (function): A function executed upon completion of the
+               method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `name` is not passed.
+            ValueError: if `name` is invalid.
+           output2 = dev.interface.arp_suppression(name='89')
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.arp_suppression(
+            ...         name='89')
+            ...         output = dev.interface.arp_suppression(
+            ...         get=True,name='89')
+            ...         output = dev.interface.arp_suppression(
+            ...         enable=False,name='89')
+            ...         # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+            KeyError
+         """
+
+        name = kwargs.pop('name')
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        callback = kwargs.pop('callback', self._callback)
+        method_class = self._interface
+        arp_args = dict(name=name)
+        if name:
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        arp_suppression = getattr(method_class,
+                                  'interface_vlan_interface_vlan_suppress_'
+                                  'arp_suppress_arp_enable')
+        config = arp_suppression(**arp_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+                config.find('.//*suppress-arp').set('operation', 'delete')
         return callback(config)
