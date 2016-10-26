@@ -2881,42 +2881,6 @@ class Interface(object):
         return request_interface
 
     @property
-    def switchport_list(self):
-        """list[dict]:A list of dictionary items describing the details
-            of list of dictionary items describing the details of switch
-            port"""
-        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
-        result = []
-        request_interface = self.get_interface_switchport_request()
-        interface_result = self._callback(request_interface, 'get')
-        for interface in interface_result.findall('%sswitchport' % urn):
-            vlans = []
-            interface_type = self.get_node_value(interface, '%sinterface-type',
-                                                 urn)
-            interface_name = self.get_node_value(interface, '%sinterface-name',
-                                                 urn)
-            mode = self.get_node_value(interface, '%smode', urn)
-            intf = interface.find('%sactive-vlans' % urn)
-            for vlan_node in intf.findall('%svlanid' % urn):
-                vlan = vlan_node.text
-                vlans.append(vlan)
-            results = {'vlan-id': vlans,
-                       'mode': mode,
-                       'interface-name': interface_name,
-                       'interface_type': interface_type}
-            result.append(results)
-        return result
-
-    @staticmethod
-    def get_interface_switchport_request():
-        """Creates a new Netconf request"""
-        request_interface = ET.Element(
-            'get-interface-switchport',
-            xmlns="urn:brocade.com:mgmt:brocade-interface-ext"
-        )
-        return request_interface
-
-    @property
     def port_channels(self):
         """list[dict]: A list of dictionary items of port channels.
 
@@ -3414,4 +3378,178 @@ class Interface(object):
                 return True
         if kwargs.pop('delete', False):
             config.find('.//*learning-mode').set('operation', 'delete')
+        return callback(config)
+
+    def add_int_vrf(self, **kwargs):
+        """
+        Add L3 Interface in Vrf.
+
+        Args:
+            int_type:L3 interface type on which the vrf needs to be configured.
+            name:L3 interface name on which the vrf needs to be configured.
+            vrf_name: Vrf name with which the L3 interface needs to be
+             associated.
+            enable (bool): If vrf fowarding should be enabled
+                or disabled.Default:``True``.
+            get (bool) : Get config instead of editing config. (True, False)
+            rbridge_id (str): rbridge-id for device. Only required when type is
+                `ve`.
+            callback (function): A function executed upon completion of the
+               method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `int_type`, `name`, `vrf` is not passed.
+            ValueError: if `int_type`, `name`, `vrf` is invalid.
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.add_int_vrf(
+            ...         int_type='tengigabitethernet',
+            ...         name='225/0/38',
+            ...         vrf_name='100',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.add_int_vrf(
+            ...         get=True,int_type='tengigabitethernet',
+            ...         name='225/0/38',
+            ...         vrf_name='100',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.add_int_vrf(
+            ...         enable=False,int_type='tengigabitethernet',
+            ...         name='225/0/39',
+            ...         vrf_name='101',
+            ...         rbridge_id='1')
+            ...         # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+            KeyError
+         """
+
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        vrf_name = kwargs.pop('vrf_name', 'Default')
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['gigabitethernet', 'tengigabitethernet',
+                           'fortygigabitethernet', 'hundredgigabitethernet',
+                           'port_channel', 've']
+        vrf_args = dict(name=name, forwarding=vrf_name)
+        method_class = self._interface
+        if get:
+            enable = None
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        method_name = 'interface_%s_vrf_forwarding' % \
+                      int_type
+        if int_type == 've':
+            method_name = 'rbridge_id_%s' % method_name
+            method_class = self._rbridge
+            vrf_args['rbridge_id'] = rbridge_id
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        elif not pynos.utilities.valid_interface(int_type, name):
+            raise ValueError('`name` must be in the format of x/y/z for '
+                             'physical interfaces or x for port channel.')
+        add_int_vrf = getattr(method_class, method_name)
+        config = add_int_vrf(**vrf_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+            config.find('.//*forwarding').set('operation', 'delete')
+        return callback(config)
+
+    def int_ipv4_arp_aging_timout(self, **kwargs):
+        """
+        Add "ip arp aging-time-out <>".
+
+        Args:
+            int_type:L3 Interface type on which the ageout time needs to be
+             configured.
+            name:L3 Interface name on which the ageout time needs to be
+             configured.
+            arp_aging_timeout: Arp age out time in <0..240>.
+            enable (bool): If ip arp aging time out needs to be enabled
+                or disabled.Default:``True``.
+            get (bool) : Get config instead of editing config. (True, False)
+            rbridge_id (str): rbridge-id for device.
+             Only required when type is 've'.
+            callback (function): A function executed upon completion of the
+               method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if `int_type`, `name`, `arp_aging_timeout` is not passed.
+            ValueError: if `int_type`, `name`, `arp_aging_timeout` is invalid.
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.int_ipv4_arp_aging_timout(
+            ...         int_type='tengigabitethernet',
+            ...         name='225/0/38',
+            ...         arp_aging_timeout='20',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.int_ipv4_arp_aging_timout(
+            ...         get=True,int_type='tengigabitethernet',
+            ...         name='225/0/39',
+            ...         arp_aging_timeout='40',
+            ...         rbridge_id='9')
+            ...         output = dev.interface.int_ipv4_arp_aging_timout(
+            ...         enable=False,int_type='tengigabitethernet',
+            ...         name='225/0/39',
+            ...         arp_aging_timeout='40',
+            ...         rbridge_id='9')
+            ...         # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+            KeyError
+         """
+
+        int_type = kwargs.pop('int_type').lower()
+        name = kwargs.pop('name')
+        arp_aging_timeout = kwargs.pop('arp_aging_timeout', 0)
+        enable = kwargs.pop('enable', True)
+        get = kwargs.pop('get', False)
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['gigabitethernet', 'tengigabitethernet',
+                           'fortygigabitethernet', 'hundredgigabitethernet',
+                           'port_channel', 've']
+        ageout_args = dict(name=name, arp_aging_timeout=arp_aging_timeout)
+        method_class = self._interface
+        if get:
+            enable = None
+        if (int(arp_aging_timeout) < 0) or (int(arp_aging_timeout) > 240):
+            raise ValueError('arp_aging_timeout must be within 0-240')
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        else:
+            method_name = 'interface_%s_ip_ip_config_arp_aging_timeout' % \
+                      int_type
+        if int_type == 've':
+            method_name = 'rbridge_id_%s' % method_name
+            method_class = self._rbridge
+            ageout_args['rbridge_id'] = rbridge_id
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+        elif not pynos.utilities.valid_interface(int_type, name):
+            raise ValueError('`name` must be in the format of x/y/z for '
+                             'physical interfaces or x for port channel.')
+        int_ipv4_arp_aging_timout = getattr(method_class, method_name)
+        config = int_ipv4_arp_aging_timout(**ageout_args)
+        if get:
+            return callback(config, handler='get_config')
+        if not enable:
+            config.find('.//*arp-aging-timeout').set('operation', 'delete')
         return callback(config)
