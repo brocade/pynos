@@ -23,6 +23,8 @@ import pynos.utilities
 from pynos.exceptions import InvalidVlanId
 from pynos.versions.base.yang.brocade_interface import brocade_interface
 from pynos.versions.base.yang.brocade_rbridge import brocade_rbridge
+from pynos.versions.base.yang.brocade_mac_address_table \
+    import brocade_mac_address_table
 
 
 class Interface(object):
@@ -52,6 +54,9 @@ class Interface(object):
             callback=pynos.utilities.return_xml
         )
         self._rbridge = brocade_rbridge(
+            callback=pynos.utilities.return_xml
+        )
+        self._mac_address_table = brocade_mac_address_table(
             callback=pynos.utilities.return_xml
         )
 
@@ -3070,15 +3075,6 @@ class Interface(object):
         Raises:
             KeyError: if `int_type`, `name`, `vrid` is not passed.
             ValueError: if `int_type`, `name`, `vrid` is invalid.
-=======
-
-        Returns:
-            Return value of `callback`.
-
-        Raises:
-            KeyError: if `int_type`, `name`, `vrid` is not passed.
-            ValueError: if `int_type`, `name`, `vrid` is invalid.
-
 
         Examples:
             >>> import pynos.device
@@ -3143,12 +3139,13 @@ class Interface(object):
 
         Args:
             int_type (str): Type of interface. (gigabitethernet,
-                tengigabitethernet, etc).
-            name (str): Name of interface. (1/0/5, 1/0/10, etc).
+                tengigabitethernet, ve, etc).
+            name (str): Name of interface. (1/0/5, 1/0/10, VE name etc).
             vrid (str): vrrpev3 ID.
-            enable (bool): If vrrpe virtual IP should be enabled
-                or disabled.Default:``True``.
             get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, the VIP address is added and False if its to
+                be deleted (True, False). Default value will be False if not
+                specified.
             vip (str): IPv4/IPv6 Virtual IP Address.
             rbridge_id (str): rbridge-id for device. Only required when type is
                 `ve`.
@@ -3156,18 +3153,12 @@ class Interface(object):
                 method.  The only parameter passed to `callback` will be the
                 ``ElementTree`` `config`.
 
-        Returns:
-            Return value of `callback`.
         Raises:
             KeyError: if `int_type`, `name`, `vrid`, or `vip` is not passed.
             ValueError: if `int_type`, `name`, `vrid`, or `vip` is invalid.
 
         Returns:
             Return value of `callback`.
-
-        Raises:
-            KeyError: if `int_type`, `name`, `vrid`, or `vip` is not passed.
-            ValueError: if `int_type`, `name`, `vrid`, or `vip` is invalid.
 
         Examples:
             >>> import pynos.device
@@ -3176,75 +3167,63 @@ class Interface(object):
             >>> for switch in switches:
             ...     conn = (switch, '22')
             ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
-            ...         output = dev.services.vrrpe(enable=True,
-            ...         rbridge_id='225')
-            ...         output = dev.interface.set_ip('tengigabitethernet',
-            ...         '225/0/18', '10.1.1.2/24')
-            ...         output = dev.interface.ip_address(name='225/0/18',
-            ...         int_type='tengigabitethernet',
-            ...         ip_addr='2001:4818:f000:1ab:cafe:beef:1000:2/64')
-            ...         dev.interface.vrrpe_vip(int_type='tengigabitethernet',
-            ...         name='225/0/18', vrid='1', vip='10.1.1.1/24')
-            ...         dev.interface.vrrpe_vip(int_type='tengigabitethernet',
-            ...         name='225/0/18', vrid='1',
-            ...         vip='fe80::cafe:beef:1000:1/64')
-            ...         dev.interface.vrrpe_vip(int_type='tengigabitethernet',
-            ...         name='225/0/18', vrid='1',
-            ...         vip='2001:4818:f000:1ab:cafe:beef:1000:1/64')
-            ...         output = dev.interface.add_vlan_int('89')
-            ...         output = dev.interface.ip_address(name='89',
-            ...         int_type='ve', ip_addr='172.16.1.1/24',
-            ...         rbridge_id='225')
-            ...         output = dev.interface.ip_address(name='89',
-            ...         int_type='ve', rbridge_id='225',
-            ...         ip_addr='2002:4818:f000:1ab:cafe:beef:1000:2/64')
-            ...         output = dev.services.vrrpe(ip_version='6',
-            ...         enable=False, rbridge_id='225')
-            ...         output = dev.services.vrrpe(enable=False,
-            ...         rbridge_id='225')
-            ...         dev.interface.vrrpe_vip(int_type='ve', name='89',
-            ...         vrid='1', vip='172.16.1.2/24', rbridge_id='225')
-            ...         dev.interface.vrrpe_vip(int_type='ve', name='89',
-            ...         vrid='1', vip='fe80::dafe:beef:1000:1/64',
-            ...         rbridge_id='225')
-            ...         dev.interface.vrrpe_vip(int_type='ve', name='89',
-            ...         vrid='1', vip='2002:4818:f000:1ab:cafe:beef:1000:1/64',
-            ...         rbridge_id='225')
+            ...         output =dev.interface.vrrpe_vip(int_type='ve',
+            ...         name='89', rbridge_id = '1',
+            ...         vrid='11', vip='10.0.1.10')
+            ...         output = dev.interface.vrrpe_vip(get=True,
+            ...         int_type='ve', name='89', rbridge_id = '1')
+            ...         output =dev.interface.vrrpe_vip(delete=True,
+            ...         int_type='ve', name='89', rbridge_id = '1',vrid='1',
+            ...         vip='10.0.0.10')
         """
+
         int_type = kwargs.pop('int_type').lower()
-        name = kwargs.pop('name')
-        vrid = kwargs.pop('vrid')
-        enable = kwargs.pop('enable', True)
+        name = kwargs.pop('name',)
+        vip = kwargs.pop('vip', '')
         get = kwargs.pop('get', False)
-        vip = kwargs.pop('vip')
-        rbridge_id = kwargs.pop('rbridge_id', '1')
+        delete = kwargs.pop('delete', False)
         callback = kwargs.pop('callback', self._callback)
         valid_int_types = ['gigabitethernet', 'tengigabitethernet',
                            'fortygigabitethernet', 'hundredgigabitethernet',
                            'port_channel', 've']
-        if get:
-            enable = None
-        ipaddress = ip_interface(unicode(vip))
-        vrrpe_vip = None
-        vrrpe_args = dict(name=name,
-                          vrid=vrid,
-                          virtual_ipaddr=str(ipaddress.ip))
-        method_class = self._interface
+
+        if vip != '':
+            ipaddress = ip_interface(unicode(vip))
+            version = ipaddress.version
+        else:
+            version = 4
 
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
-        if ipaddress.version == 4:
+        if delete:
+            vrid = kwargs.pop('vrid')
+            rbridge_id = kwargs.pop('rbridge_id', '1')
+            vrrpe_args = dict(rbridge_id=rbridge_id, name=name,
+                              vrid=vrid, virtual_ipaddr=vip)
+        elif get:
+            rbridge_id = kwargs.pop('rbridge_id', '1')
+            vrrpe_args = dict(name=name, vrid='', virtual_ipaddr='')
+        else:
+            vrid = kwargs.pop('vrid')
+            ipaddress = ip_interface(unicode(vip))
+            if int_type == 've':
+                rbridge_id = kwargs.pop('rbridge_id', '1')
+            vrrpe_args = dict(name=name, vrid=vrid,
+                              virtual_ipaddr=str(ipaddress.ip))
+        method_name = None
+        method_class = self._interface
+        if version == 4:
             vrrpe_args['version'] = '3'
             method_name = 'interface_%s_vrrpe_virtual_ip_virtual_' \
                           'ipaddr' % int_type
-        elif ipaddress.version == 6:
+        elif version == 6:
             method_name = 'interface_%s_ipv6_vrrpv3e_group_virtual_ip_' \
                           'virtual_ipaddr' % int_type
 
         if int_type == 've':
             method_name = 'rbridge_id_%s' % method_name
-            if ipaddress.version == 6:
+            if version == 6:
                 method_name = method_name.replace('group_', '')
             method_class = self._rbridge
             vrrpe_args['rbridge_id'] = rbridge_id
@@ -3256,11 +3235,25 @@ class Interface(object):
 
         vrrpe_vip = getattr(method_class, method_name)
         config = vrrpe_vip(**vrrpe_args)
-        if get:
-            return callback(config, handler='get_config')
-        if not enable:
+        result = []
+
+        if delete:
             config.find('.//*virtual-ip').set('operation', 'delete')
-        return callback(config)
+        if get:
+            output = callback(config, handler='get_config')
+            for item in output.data.findall('.//{*}vrrpe'):
+                vrid = item.find('.//{*}vrid').text
+                if item.find('.//{*}virtual-ipaddr') is not None:
+                    vip = item.find('.//{*}virtual-ipaddr').text
+                else:
+                    vip = ''
+                tmp = {"vrid": vrid,
+                       "vip": vip}
+                result.append(tmp)
+        else:
+            result = callback(config)
+
+        return result
 
     def vrrpe_vmac(self, **kwargs):
         """Set vrrpe virtual mac.
@@ -3383,3 +3376,42 @@ class Interface(object):
             ip_result.append(results)
         return ip_result
 
+    def conversational_mac(self, **kwargs):
+        """Enable conversational mac learning on vdx switches
+
+        Args:
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the mac-learning. (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            None
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.conversational_mac()
+            ...     output = dev.interface.conversational_mac(get=True)
+            ...     output = dev.interface.conversational_mac(delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        mac_learning = getattr(self._mac_address_table,
+                               'mac_address_table_learning_mode')
+
+        config = mac_learning(learning_mode='conversational')
+        if kwargs.pop('get', False):
+            output = callback(config, handler='get_config')
+            item = output.data.find('.//{*}learning-mode')
+            if item is not None:
+                return True
+        if kwargs.pop('delete', False):
+            config.find('.//*learning-mode').set('operation', 'delete')
+        return callback(config)
