@@ -3315,16 +3315,17 @@ class Interface(object):
             config.find('.//*virtual-mac').set('operation', 'delete')
         return callback(config)
 
-    @property
-    def ve_interfaces(self):
+    def ve_interfaces(self, **kwargs):
         """list[dict]: A list of dictionary items describing the operational
         state of ve interfaces along with the ip address associations.
         """
         urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
-        int_ns = 'urn:brocade.com:mgmt:brocade-interface-ext'
 
+        rbridge_id = None
+        if 'rbridge_id' in kwargs:
+            rbridge_id = kwargs.pop('rbridge_id')
         ip_result = []
-        request_interface = ET.Element('get-ip-interface', xmlns=int_ns)
+        request_interface = self.get_intf_rb_id(rbridge_id=rbridge_id)
         interface_result = self._callback(request_interface, 'get')
         for interface in interface_result.findall('%sinterface' % urn):
             int_type = interface.find('%sinterface-type' % urn).text
@@ -3342,6 +3343,23 @@ class Interface(object):
                        'ip-address': ip_address}
             ip_result.append(results)
         return ip_result
+
+    @staticmethod
+    def get_intf_rb_id(rbridge_id):
+        """ Creates a new Netconf request based on the last received or if
+        rbridge_id is specifed
+        ifindex when the hasMore flag is true
+        """
+
+        intf_rb_id = ET.Element(
+            'get-ip-interface',
+            xmlns="urn:brocade.com:mgmt:brocade-interface-ext"
+        )
+        if rbridge_id is not None:
+            rbridge_el = ET.SubElement(intf_rb_id, "rbridge-id")
+            rbridge_el.text = rbridge_id
+
+        return intf_rb_id
 
     def conversational_mac(self, **kwargs):
         """Enable conversational mac learning on vdx switches
@@ -3404,6 +3422,7 @@ class Interface(object):
             Return value of `callback`.
         Raises:
             KeyError: if `int_type`, `name`, `vrf` is not passed.
+                      (int_type need not be passed if get=True)
             ValueError: if `int_type`, `name`, `vrf` is invalid.
         Examples:
             >>> import pynos.device
@@ -3423,6 +3442,9 @@ class Interface(object):
             ...         vrf_name='100',
             ...         rbridge_id='1')
             ...         output = dev.interface.add_int_vrf(
+            ...         get=True, name='225/0/38',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.add_int_vrf(
             ...         enable=False,int_type='tengigabitethernet',
             ...         name='225/0/39',
             ...         vrf_name='101',
@@ -3432,7 +3454,6 @@ class Interface(object):
             KeyError
          """
 
-        int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name')
         vrf_name = kwargs.pop('vrf_name', 'Default')
         enable = kwargs.pop('enable', True)
@@ -3442,10 +3463,15 @@ class Interface(object):
         valid_int_types = ['gigabitethernet', 'tengigabitethernet',
                            'fortygigabitethernet', 'hundredgigabitethernet',
                            'port_channel', 've']
-        vrf_args = dict(name=name, forwarding=vrf_name)
-        method_class = self._interface
         if get:
+            int_type = kwargs.pop('int_type', 've').lower()
+            vrf_args = dict(name=name, forwarding='')
             enable = None
+        else:
+            int_type = kwargs.pop('int_type').lower()
+            vrf_args = dict(name=name, forwarding=vrf_name)
+
+        method_class = self._interface
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
