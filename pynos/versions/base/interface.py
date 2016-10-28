@@ -3346,9 +3346,7 @@ class Interface(object):
 
     @staticmethod
     def get_intf_rb_id(rbridge_id):
-        """ Creates a new Netconf request based on the last received or if
-        rbridge_id is specifed
-        ifindex when the hasMore flag is true
+        """ Creates a new Netconf request based on the rbridge_id specifed
         """
 
         intf_rb_id = ET.Element(
@@ -3456,6 +3454,7 @@ class Interface(object):
 
         name = kwargs.pop('name')
         vrf_name = kwargs.pop('vrf_name', 'Default')
+        int_type = kwargs.pop('int_type').lower()
         enable = kwargs.pop('enable', True)
         get = kwargs.pop('get', False)
         rbridge_id = kwargs.pop('rbridge_id', '1')
@@ -3464,12 +3463,9 @@ class Interface(object):
                            'fortygigabitethernet', 'hundredgigabitethernet',
                            'port_channel', 've']
         if get:
-            int_type = kwargs.pop('int_type', 've').lower()
-            vrf_args = dict(name=name, forwarding='')
             enable = None
-        else:
-            int_type = kwargs.pop('int_type').lower()
-            vrf_args = dict(name=name, forwarding=vrf_name)
+
+        vrf_args = dict(name=name, forwarding=vrf_name)
 
         method_class = self._interface
         if int_type not in valid_int_types:
