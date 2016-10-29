@@ -3318,12 +3318,31 @@ class Interface(object):
     def ve_interfaces(self, **kwargs):
         """list[dict]: A list of dictionary items describing the operational
         state of ve interfaces along with the ip address associations.
+
+        Args:
+            rbridge_id (str): rbridge-id for device.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            None
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.ve_interfaces()
+            ...     output = dev.interface.ve_interfaces(rbridge_id='1')
         """
+
         urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
 
-        rbridge_id = None
-        if 'rbridge_id' in kwargs:
-            rbridge_id = kwargs.pop('rbridge_id')
+        rbridge_id = kwargs.pop('rbridge_id', None)
         ip_result = []
         request_interface = self.get_intf_rb_id(rbridge_id=rbridge_id)
         interface_result = self._callback(request_interface, 'get')
@@ -3345,7 +3364,7 @@ class Interface(object):
         return ip_result
 
     @staticmethod
-    def get_intf_rb_id(rbridge_id):
+    def _get_intf_rb_id(rbridge_id):
         """ Creates a new Netconf request based on the rbridge_id specifed
         """
 
