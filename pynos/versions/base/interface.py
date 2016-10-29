@@ -3344,7 +3344,7 @@ class Interface(object):
 
         rbridge_id = kwargs.pop('rbridge_id', None)
         ip_result = []
-        request_interface = self.get_intf_rb_id(rbridge_id=rbridge_id)
+        request_interface = self._get_intf_rb_id(rbridge_id=rbridge_id)
         interface_result = self._callback(request_interface, 'get')
         for interface in interface_result.findall('%sinterface' % urn):
             int_type = interface.find('%sinterface-type' % urn).text
