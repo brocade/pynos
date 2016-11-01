@@ -1148,13 +1148,13 @@ class BGP(BaseBGP):
             >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
             ...     output = dev.bgp.vrf_max_paths(paths='8',
             ...     rbridge_id='225')
-            ...     output = dev.bgp.vrf_max_paths(paths='8',
+            ...     output = dev.bgp.vrf_max_paths(
             ...     rbridge_id='225', get=True)
             ...     output = dev.bgp.vrf_max_paths(paths='8',
             ...     rbridge_id='225', delete=True)
             ...     output = dev.bgp.vrf_max_paths(paths='8', afi='ipv6',
             ...     rbridge_id='225')
-            ...     output = dev.bgp.vrf_max_paths(paths='8', afi='ipv6',
+            ...     output = dev.bgp.vrf_max_paths(afi='ipv6',
             ...     rbridge_id='225', get=True)
             ...     output = dev.bgp.vrf_max_paths(paths='8', afi='ipv6',
             ...     rbridge_id='225', delete=True)
@@ -1165,34 +1165,47 @@ class BGP(BaseBGP):
         """
         afi = kwargs.pop('afi', 'ipv4')
         vrf = kwargs.pop('vrf', 'default')
+        get_config = kwargs.pop('get', False)
         callback = kwargs.pop('callback', self._callback)
         if afi not in ['ipv4', 'ipv6']:
             raise AttributeError('Invalid AFI.')
         if "ipv4" in afi:
-            args = dict(af_vrf_name=vrf,
-                        rbridge_id=kwargs.pop('rbridge_id', '1'),
-                        load_sharing_value=kwargs.pop('paths', '8'))
+            if not get_config:
+                args = dict(af_vrf_name=vrf,
+                            rbridge_id=kwargs.pop('rbridge_id', '1'),
+                            load_sharing_value=kwargs.pop('paths', '8'))
+            else:
+                args = dict(af_vrf_name=vrf,
+                            rbridge_id=kwargs.pop('rbridge_id', '1'),
+                            load_sharing_value='')
             max_paths = getattr(self._rbridge,
                                 'rbridge_id_router_router_bgp_address_family_'
                                 'ipv4_ipv4_unicast_af_vrf_maximum_paths_'
                                 'load_sharing_value')
         elif "ipv6" in afi:
-            args = dict(af_ipv6_vrf_name=vrf,
-                        rbridge_id=kwargs.pop('rbridge_id', '1'),
-                        load_sharing_value=kwargs.pop('paths', '8'))
+            if not get_config:
+                args = dict(af_ipv6_vrf_name=vrf,
+                            rbridge_id=kwargs.pop('rbridge_id', '1'),
+                            load_sharing_value=kwargs.pop('paths', '8'))
+            else:
+                args = dict(af_ipv6_vrf_name=vrf,
+                            rbridge_id=kwargs.pop('rbridge_id', '1'),
+                            load_sharing_value='')
             max_paths = getattr(self._rbridge,
                                 'rbridge_id_router_router_bgp_address_family_'
                                 'ipv6_ipv6_unicast_af_ipv6_vrf_maximum_paths_'
                                 'load_sharing_value')
 
         config = max_paths(**args)
-        if kwargs.pop('get', False):
+        if get_config:
             output = callback(config, handler='get_config')
             if output.data.find('.//{*}load-sharing-value') is not None:
                 max_path = output.data.find('.//{*}load-sharing-value').text
                 result = {"vrf": vrf,
                           "max_path": max_path}
                 return result
+            else:
+                return None
         if kwargs.pop('delete', False):
             config.find('.//*load-sharing-value').set('operation', 'delete')
         return callback(config)
@@ -1344,13 +1357,13 @@ class BGP(BaseBGP):
             >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
             ...     output = dev.bgp.default_vrf_max_paths(paths='8',
             ...     rbridge_id='225')
-            ...     output = dev.bgp.default_vrf_max_paths(paths='8',
+            ...     output = dev.bgp.default_vrf_max_paths(
             ...     rbridge_id='225', get=True)
             ...     output = dev.bgp.default_vrf_max_paths(paths='8',
             ...     rbridge_id='225', delete=True)
             ...     output = dev.bgp.default_vrf_max_paths(paths='8',
             ...              afi='ipv6', rbridge_id='225')
-            ...     output = dev.bgp.default_vrf_max_paths(paths='8',
+            ...     output = dev.bgp.default_vrf_max_paths(
             ...              afi='ipv6', rbridge_id='225', get=True)
             ...     output = dev.bgp.default_vrf_max_paths(paths='8',
             ...              afi='ipv6', rbridge_id='225', delete=True)
@@ -1361,10 +1374,15 @@ class BGP(BaseBGP):
         """
         afi = kwargs.pop('afi', 'ipv4')
         callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
         if afi not in ['ipv4', 'ipv6']:
             raise AttributeError('Invalid AFI.')
-        args = dict(rbridge_id=kwargs.pop('rbridge_id', '1'),
-                    load_sharing_value=kwargs.pop('paths', '8'))
+        if not get_config:
+            args = dict(rbridge_id=kwargs.pop('rbridge_id', '1'),
+                        load_sharing_value=kwargs.pop('paths', '8'))
+        else:
+            args = dict(rbridge_id=kwargs.pop('rbridge_id', '1'),
+                        load_sharing_value='')
         max_paths = getattr(self._rbridge,
                             'rbridge_id_router_router_bgp_address_family_'
                             '{0}_{0}_unicast_default_vrf_af_common_cmds_'
@@ -1372,12 +1390,14 @@ class BGP(BaseBGP):
                             'sharing_value'.format(afi))
 
         config = max_paths(**args)
-        if kwargs.pop('get', False):
+        if get_config:
             output = callback(config, handler='get_config')
             if output.data.find('.//{*}load-sharing-value') is not None:
                 max_path = output.data.find('.//{*}load-sharing-value').text
                 result = {"max_path": max_path}
                 return result
+            else:
+                return None
         if kwargs.pop('delete', False):
             config.find('.//*load-sharing-value').set('operation', 'delete')
         return callback(config)
