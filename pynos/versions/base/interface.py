@@ -1338,12 +1338,7 @@ class Interface(object):
 
         tag_args = dict(name=name)
         tag_native_vlan = getattr(self._interface, 'interface_%s_switchport_'
-<<<<<<< HEAD
-                                                   'trunk_tag_native_vlan' % int_type)
-=======
-                                                   'trunk_tag_native_vlan' %
-                                  int_type)
->>>>>>> 816c3adde8ef9fbba301fe9f41c4c13ea36ae235
+                                  'trunk_tag_native_vlan' % int_type)
         config = tag_native_vlan(**tag_args)
         if not enabled:
             untag = config.find('.//*native-vlan')
@@ -2780,28 +2775,18 @@ class Interface(object):
 
     @property
     def switchport_list(self):
-<<<<<<< HEAD
-        """list[dict]:A list of dictionary items describing the details 
-            of list of dictionary items describing the details of switch port"""
-=======
         """list[dict]:A list of dictionary items describing the details
-        of list of dictionary items describing the details of switch port"""
->>>>>>> 816c3adde8ef9fbba301fe9f41c4c13ea36ae235
+         of list of dictionary items describing the details of switch port"""
         urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
         result = []
         request_interface = self.get_interface_switchport_request()
         interface_result = self._callback(request_interface, 'get')
         for interface in interface_result.findall('%sswitchport' % urn):
             vlans = []
-<<<<<<< HEAD
-            interface_type = self.get_node_value(interface, '%sinterface-type', urn)
-            interface_name = self.get_node_value(interface, '%sinterface-name', urn)
-=======
             interface_type = self.get_node_value(interface, '%sinterface-type',
                                                  urn)
             interface_name = self.get_node_value(interface, '%sinterface-name',
                                                  urn)
->>>>>>> 816c3adde8ef9fbba301fe9f41c4c13ea36ae235
             mode = self.get_node_value(interface, '%smode', urn)
             intf = interface.find('%sactive-vlans' % urn)
             for vlan_node in intf.findall('%svlanid' % urn):
@@ -3396,8 +3381,6 @@ class Interface(object):
         if kwargs.pop('delete', False):
             config.find('.//*learning-mode').set('operation', 'delete')
         return callback(config)
-<<<<<<< HEAD
-=======
 
     def add_int_vrf(self, **kwargs):
         """
@@ -3536,7 +3519,7 @@ class Interface(object):
 
         int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name')
-        arp_aging_timeout = kwargs.pop('arp_aging_timeout', 0)
+        arp_aging_timeout = kwargs.pop('arp_aging_timeout', '')
         enable = kwargs.pop('enable', True)
         get = kwargs.pop('get', False)
         rbridge_id = kwargs.pop('rbridge_id', '1')
@@ -3548,8 +3531,9 @@ class Interface(object):
         method_class = self._interface
         if get:
             enable = None
-        if (int(arp_aging_timeout) < 0) or (int(arp_aging_timeout) > 240):
-            raise ValueError('arp_aging_timeout must be within 0-240')
+        else:
+            if (int(arp_aging_timeout) < 0) or (int(arp_aging_timeout) > 240):
+                raise ValueError('arp_aging_timeout must be within 0-240')
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
@@ -3572,4 +3556,3 @@ class Interface(object):
         if not enable:
             config.find('.//*arp-aging-timeout').set('operation', 'delete')
         return callback(config)
->>>>>>> 816c3adde8ef9fbba301fe9f41c4c13ea36ae235
