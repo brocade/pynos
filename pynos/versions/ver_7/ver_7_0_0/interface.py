@@ -841,28 +841,53 @@ class Interface(InterfaceBase):
 
         int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name')
-        anycast_ip = kwargs.pop('anycast_ip')
+        anycast_ip = kwargs.pop('anycast_ip', '')
         enable = kwargs.pop('enable', True)
         get = kwargs.pop('get', False)
         rbridge_id = kwargs.pop('rbridge_id', '1')
         callback = kwargs.pop('callback', self._callback)
         valid_int_types = ['ve']
         method_class = self._rbridge
-
-        if get:
+        if get and anycast_ip == '':
+            enable = None
+            if int_type not in valid_int_types:
+                raise ValueError('`int_type` must be one of: %s' %
+                                 repr(valid_int_types))
+            anycast_args = dict(name=name, ip_address=anycast_ip,
+                                ipv6_address=anycast_ip)
+            method_name1 = 'interface_%s_ip_ip_anycast_'\
+                           'address_ip_address' % int_type
+            method_name2 = 'interface_%s_ipv6_ipv6_'\
+                           'anycast_address_ipv6_address' % int_type
+            method_name1 = 'rbridge_id_%s' % method_name1
+            method_name2 = 'rbridge_id_%s' % method_name2
+            anycast_args['rbridge_id'] = rbridge_id
+            if not pynos.utilities.valid_vlan_id(name):
+                raise InvalidVlanId("`name` must be between `1` and `8191`")
+            ip_anycast_gateway1 = getattr(method_class, method_name1)
+            ip_anycast_gateway2 = getattr(method_class, method_name2)
+            config1 = ip_anycast_gateway1(**anycast_args)
+            config2 = ip_anycast_gateway2(**anycast_args)
+            result = []
+            result.append(callback(config1, handler='get_config'))
+            result.append(callback(config2, handler='get_config'))
+            return result
+        elif get:
             enable = None
         ipaddress = ip_interface(unicode(anycast_ip))
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
-        if ipaddress.version == 4:
-            anycast_args = dict(name=name, ip_address=anycast_ip)
-            method_name = 'interface_%s_ip_ip_anycast_'\
-                          'address_ip_address' % int_type
-        elif ipaddress.version == 6:
-            anycast_args = dict(name=name, ipv6_address=anycast_ip)
-            method_name = 'interface_%s_ipv6_ipv6_'\
-                          'anycast_address_ipv6_address' % int_type
+        if anycast_ip != '':
+            ipaddress = ip_interface(unicode(anycast_ip))
+            if ipaddress.version == 4:
+                anycast_args = dict(name=name, ip_address=anycast_ip)
+                method_name = 'interface_%s_ip_ip_anycast_'\
+                              'address_ip_address' % int_type
+            elif ipaddress.version == 6:
+                anycast_args = dict(name=name, ipv6_address=anycast_ip)
+                method_name = 'interface_%s_ipv6_ipv6_'\
+                              'anycast_address_ipv6_address' % int_type
         method_name = 'rbridge_id_%s' % method_name
         anycast_args['rbridge_id'] = rbridge_id
         if not pynos.utilities.valid_vlan_id(name):

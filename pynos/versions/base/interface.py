@@ -1338,8 +1338,7 @@ class Interface(object):
 
         tag_args = dict(name=name)
         tag_native_vlan = getattr(self._interface, 'interface_%s_switchport_'
-                                                   'trunk_tag_native_vlan' %
-                                  int_type)
+                                  'trunk_tag_native_vlan' % int_type)
         config = tag_native_vlan(**tag_args)
         if not enabled:
             untag = config.find('.//*native-vlan')
@@ -2777,7 +2776,7 @@ class Interface(object):
     @property
     def switchport_list(self):
         """list[dict]:A list of dictionary items describing the details
-        of list of dictionary items describing the details of switch port"""
+         of list of dictionary items describing the details of switch port"""
         urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
         result = []
         request_interface = self.get_interface_switchport_request()
@@ -3520,7 +3519,7 @@ class Interface(object):
 
         int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name')
-        arp_aging_timeout = kwargs.pop('arp_aging_timeout', 0)
+        arp_aging_timeout = kwargs.pop('arp_aging_timeout', '')
         enable = kwargs.pop('enable', True)
         get = kwargs.pop('get', False)
         rbridge_id = kwargs.pop('rbridge_id', '1')
@@ -3532,8 +3531,9 @@ class Interface(object):
         method_class = self._interface
         if get:
             enable = None
-        if (int(arp_aging_timeout) < 0) or (int(arp_aging_timeout) > 240):
-            raise ValueError('arp_aging_timeout must be within 0-240')
+        else:
+            if (int(arp_aging_timeout) < 0) or (int(arp_aging_timeout) > 240):
+                raise ValueError('arp_aging_timeout must be within 0-240')
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
