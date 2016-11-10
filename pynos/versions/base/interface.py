@@ -3604,8 +3604,7 @@ class Interface(object):
             output = callback(config, handler='get_config')
             if output.data.find('.//{*}name') is not None:
                 gwname = output.data.find('.//{*}name').text
-                result = {"gw_name": gwname}
-                return result
+                return gwname
             else:
                 return None
 
@@ -3712,10 +3711,8 @@ class Interface(object):
             config = overlay_gw(name='', gw_type='')
             output = callback(config, handler='get_config')
             if output.data.find('.//{*}name') is not None:
-                gwname = output.data.find('.//{*}name').text
                 gwtype = output.data.find('.//{*}gw-type').text
-                result = {"gw_name": gwname, "gw_type": gwtype}
-                return result
+                return gwtype
             else:
                 return None
 
@@ -3771,10 +3768,8 @@ class Interface(object):
             output = callback(config, handler='get_config')
             if output.data.find('.//{*}name') is not None:
                 if output.data.find('.//{*}loopback-id') is not None:
-                    gwname = output.data.find('.//{*}name').text
                     ip_intf = output.data.find('.//{*}loopback-id').text
-                    result = {"gw_name": gwname, "loopback_id": ip_intf}
-                    return result
+                    return ip_intf
                 else:
                     return None
             else:
@@ -3900,8 +3895,7 @@ class Interface(object):
                 if output.data.find('.//{*}attach') is not None:
                     gwname = output.data.find('.//{*}name').text
                     rb_id = output.data.find('.//{*}rb-add').text
-                    result = {"gw_name": gwname, "rbridge_id": rb_id}
-                    return result
+                    return rb_id
                 else:
                     return None
             else:
