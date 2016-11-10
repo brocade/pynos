@@ -784,6 +784,8 @@ class Interface(InterfaceBase):
             item = output.data.find('.//{*}aging-mode')
             if item is not None:
                 return True
+            else:
+                return None
         if kwargs.pop('delete', False):
             config.find('.//*aging-mode').set('operation', 'delete')
         return callback(config)

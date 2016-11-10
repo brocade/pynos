@@ -25,6 +25,7 @@ from pynos.versions.base.yang.brocade_interface import brocade_interface
 from pynos.versions.base.yang.brocade_rbridge import brocade_rbridge
 from pynos.versions.base.yang.brocade_mac_address_table \
     import brocade_mac_address_table
+from pynos.versions.base.yang.brocade_tunnels import brocade_tunnels
 
 
 class Interface(object):
@@ -57,6 +58,9 @@ class Interface(object):
             callback=pynos.utilities.return_xml
         )
         self._mac_address_table = brocade_mac_address_table(
+            callback=pynos.utilities.return_xml
+        )
+        self._tunnels = brocade_tunnels(
             callback=pynos.utilities.return_xml
         )
 
@@ -3555,4 +3559,352 @@ class Interface(object):
             return callback(config, handler='get_config')
         if not enable:
             config.find('.//*arp-aging-timeout').set('operation', 'delete')
+        return callback(config)
+
+    def overlay_gateway_name(self, **kwargs):
+        """Configure Name of Overlay Gateway on vdx switches
+
+        Args:
+            gw_name: Name of Overlay Gateway
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the overlay gateway config.
+                           (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `gw_name` is not passed.
+            ValueError: if `gw_name` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.overlay_gateway_name(gw_name='Leaf')
+            ...     output = dev.interface.overlay_gateway_name(get=True)
+            ...     output = dev.interface.overlay_gateway_name(gw_name='Leaf',
+            ...              delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
+        if not get_config:
+            gw_name = kwargs.pop('gw_name')
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_name')
+            config = overlay_gw(name=gw_name)
+
+        if get_config:
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_name')
+            config = overlay_gw(name='')
+            output = callback(config, handler='get_config')
+            if output.data.find('.//{*}name') is not None:
+                gwname = output.data.find('.//{*}name').text
+                result = {"gw_name": gwname}
+                return result
+            else:
+                return None
+
+        if kwargs.pop('delete', False):
+            config.find('.//overlay-gateway').set('operation', 'delete')
+        return callback(config)
+
+    def overlay_gateway_activate(self, **kwargs):
+        """Activates the Overlay Gateway Instance on VDX switches
+
+        Args:
+            gw_name: Name of Overlay Gateway
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the activate config. (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `gw_name` is not passed.
+            ValueError: if `gw_name` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.overlay_gateway_activate(
+            ...     gw_name='Leaf')
+            ...     output = dev.interface.overlay_gateway_activate(
+            ...     get=True)
+            ...     output = dev.interface.overlay_gateway_activate(
+            ...     gw_name='Leaf', delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
+        if not get_config:
+            gw_name = kwargs.pop('gw_name')
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_activate')
+            config = overlay_gw(name=gw_name)
+
+        if get_config:
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_activate')
+            config = overlay_gw(name='')
+            output = callback(config, handler='get_config')
+            if output.data.find('.//{*}name') is not None:
+                if output.data.find('.//{*}activate') is not None:
+                    return True
+                else:
+                    return None
+            else:
+                return None
+
+        if kwargs.pop('delete', False):
+            config.find('.//activate').set('operation', 'delete')
+        return callback(config)
+
+    def overlay_gateway_type(self, **kwargs):
+        """Configure Overlay Gateway Type on vdx switches
+
+        Args:
+            gw_name: Name of Overlay Gateway
+            gw_type: Type of Overlay Gateway(hardware-vtep/
+                     layer2-extension/nsx)
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the overlay gateway type.
+                           (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `gw_name`, 'gw_type' is not passed.
+            ValueError: if `gw_name`, 'gw_type' is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.overlay_gateway_type(gw_name='Leaf',
+            ...              gw_type='layer2-extension')
+            ...     output = dev.interface.overlay_gateway_name(get=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
+        if not get_config:
+            gw_name = kwargs.pop('gw_name')
+            gw_type = kwargs.pop('gw_type')
+            gw_args = dict(name=gw_name, gw_type=gw_type)
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_gw_type')
+            config = overlay_gw(**gw_args)
+
+        if get_config:
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_gw_type')
+            config = overlay_gw(name='', gw_type='')
+            output = callback(config, handler='get_config')
+            if output.data.find('.//{*}name') is not None:
+                gwname = output.data.find('.//{*}name').text
+                gwtype = output.data.find('.//{*}gw-type').text
+                result = {"gw_name": gwname, "gw_type": gwtype}
+                return result
+            else:
+                return None
+
+        return callback(config)
+
+    def overlay_gateway_loopback_id(self, **kwargs):
+        """Configure Overlay Gateway ip interface loopback
+
+        Args:
+            gw_name: Name of Overlay Gateway  <WORD:1-32>
+            loopback_id:  Loopback interface Id <NUMBER: 1-255>
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the overlay gateway loop back id.
+                           (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `gw_name`, 'loopback_id' is not passed.
+            ValueError: if `gw_name`, 'loopback_id' is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.overlay_gateway_loopback_id(
+            ...     gw_name='Leaf', loopback_id='10')
+            ...     output = dev.interface.overlay_gateway_loopback_id(
+            ...     get=True)
+            ...     output = dev.interface.overlay_gateway_loopback_id(
+            ...     gw_name='Leaf', loopback_id='10', delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
+        if not get_config:
+            gw_name = kwargs.pop('gw_name')
+            loopback_id = kwargs.pop('loopback_id')
+            gw_args = dict(name=gw_name, loopback_id=loopback_id)
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_ip_'
+                                 'interface_loopback_loopback_id')
+            config = overlay_gw(**gw_args)
+
+        if get_config:
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_ip_'
+                                 'interface_loopback_loopback_id')
+            config = overlay_gw(name='', loopback_id='')
+            output = callback(config, handler='get_config')
+            if output.data.find('.//{*}name') is not None:
+                if output.data.find('.//{*}loopback-id') is not None:
+                    gwname = output.data.find('.//{*}name').text
+                    ip_intf = output.data.find('.//{*}loopback-id').text
+                    result = {"gw_name": gwname, "loopback_id": ip_intf}
+                    return result
+                else:
+                    return None
+            else:
+                return None
+
+        if kwargs.pop('delete', False):
+            config.find('.//loopback-id').set('operation', 'delete')
+
+        return callback(config)
+
+    def overlay_gateway_vlan_vni_auto(self, **kwargs):
+        """Configure Overlay Gateway Vlan VNI mapping auto on VDX switches
+
+        Args:
+            gw_name: Name of Overlay Gateway
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete vlan to vni auto mapping. (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `gw_name` is not passed.
+            ValueError: if `gw_name` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.overlay_gateway_vlan_vni_auto(
+            ...     gw_name='Leaf')
+            ...     output = dev.interface.overlay_gateway_vlan_vni_auto(
+            ...     get=True)
+            ...     output = dev.interface.overlay_gateway_vlan_vni_auto(
+            ...     gw_name='Leaf', delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
+        if not get_config:
+            gw_name = kwargs.pop('gw_name')
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_map_'
+                                 'vlan_vni_auto')
+            config = overlay_gw(name=gw_name)
+
+        if get_config:
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_map_'
+                                 'vlan_vni_auto')
+            config = overlay_gw(name='')
+            output = callback(config, handler='get_config')
+            if output.data.find('.//{*}name') is not None:
+                if output.data.find('.//{*}map') is not None:
+                    return True
+                else:
+                    return None
+            else:
+                return None
+
+        if kwargs.pop('delete', False):
+            config.find('.//map').set('operation', 'delete')
+        return callback(config)
+
+    def overlay_gateway_attach_rbridge_id(self, **kwargs):
+        """Configure Overlay Gateway attach rbridge id
+
+        Args:
+            gw_name: Name of Overlay Gateway  <WORD:1-32>
+            rbridge_id:  Single or range of rbridge id to be added/removed
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the attached rbridge list
+                           (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `gw_name`, 'rbridge_id' is not passed.
+            ValueError: if `gw_name`, 'rbridge_id' is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.overlay_gateway_attach_rbridge_id(
+            ...     gw_name='Leaf', rbridge_id='10')
+            ...     output = dev.interface.overlay_gateway_attach_rbridge_id(
+            ...     get=True)
+            ...     output = dev.interface.overlay_gateway_attach_rbridge_id(
+            ...     gw_name='Leaf', rbridge_id='1-2', delete=True)
+        """
+
+        callback = kwargs.pop('callback', self._callback)
+        get_config = kwargs.pop('get', False)
+        delete = kwargs.pop('delete', False)
+        if not get_config:
+            gw_name = kwargs.pop('gw_name')
+            rbridge_id = kwargs.pop('rbridge_id')
+            if delete is True:
+                gw_args = dict(name=gw_name, rb_remove=rbridge_id)
+                overlay_gw = getattr(self._tunnels, 'overlay_gateway_'
+                                     'attach_rbridge_id_rb_remove')
+                config = overlay_gw(**gw_args)
+            else:
+                gw_args = dict(name=gw_name, rb_add=rbridge_id)
+                overlay_gw = getattr(self._tunnels, 'overlay_gateway_'
+                                     'attach_rbridge_id_rb_add')
+                config = overlay_gw(**gw_args)
+
+        if get_config:
+            overlay_gw = getattr(self._tunnels, 'overlay_gateway_'
+                                 'attach_rbridge_id_rb_add')
+            config = overlay_gw(name='', rb_add='')
+            output = callback(config, handler='get_config')
+            if output.data.find('.//{*}name') is not None:
+                if output.data.find('.//{*}attach') is not None:
+                    gwname = output.data.find('.//{*}name').text
+                    rb_id = output.data.find('.//{*}rb-add').text
+                    result = {"gw_name": gwname, "rbridge_id": rb_id}
+                    return result
+                else:
+                    return None
+            else:
+                return None
+
         return callback(config)
