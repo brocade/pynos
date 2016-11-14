@@ -3943,3 +3943,61 @@ class Interface(object):
                 return None
 
         return callback(config)
+
+    def ipv6_link_local(self, **kwargs):
+        """Configure ipv6 link local address on interfaces on vdx switches
+
+        Args:
+            int_type: Interface type on which the ipv6 link local needs to be
+             configured.
+            name: 'Ve' or 'loopback' interface name.
+            rbridge_id (str): rbridge-id for device.
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the mac-learning. (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            KeyError: if `int_type`, `name` is not passed.
+            ValueError: if `int_type`, `name` is invalid.
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.ipv6_link_local(name='500',
+            ...     int_type='ve',rbridge_id='1')
+            ...     output = dev.interface.ipv6_link_local(get=True,name='500',
+            ...     int_type='ve',rbridge_id='1')
+            ...     output = dev.interface.ipv6_link_local(delete=True,
+            ...     name='500', int_type='ve', rbridge_id='1')
+        """
+
+        int_type = kwargs.pop('int_type').lower()
+        ve_name = kwargs.pop('name')
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+        valid_int_types = ['loopback', 've']
+        if int_type not in valid_int_types:
+            raise ValueError('`int_type` must be one of: %s' %
+                             repr(valid_int_types))
+        link_args = dict(name=ve_name, rbridge_id=rbridge_id,
+                         int_type=int_type)
+        method_name = 'rbridge_id_interface_%s_ipv6_ipv6_config_address_' \
+                      'use_link_local_only' % int_type
+        method_class = self._rbridge
+        v6_link_local = getattr(method_class, method_name)
+        config = v6_link_local(**link_args)
+
+        if kwargs.pop('get', False):
+            output = callback(config, handler='get_config')
+            item = output.data.find('.//{*}use-link-local-only')
+            if item is not None:
+                return True
+        if kwargs.pop('delete', False):
+            config.find('.//*use-link-local-only').set('operation', 'delete')
+        return callback(config)
