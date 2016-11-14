@@ -3318,16 +3318,36 @@ class Interface(object):
             config.find('.//*virtual-mac').set('operation', 'delete')
         return callback(config)
 
-    @property
-    def ve_interfaces(self):
+    def ve_interfaces(self, **kwargs):
         """list[dict]: A list of dictionary items describing the operational
         state of ve interfaces along with the ip address associations.
-        """
-        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
-        int_ns = 'urn:brocade.com:mgmt:brocade-interface-ext'
 
+        Args:
+            rbridge_id (str): rbridge-id for device.
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+
+        Returns:
+            Return value of `callback`.
+
+        Raises:
+            None
+
+        Examples:
+            >>> import pynos.device
+            >>> conn = ('10.24.39.211', '22')
+            >>> auth = ('admin', 'password')
+            >>> with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...     output = dev.interface.ve_interfaces()
+            ...     output = dev.interface.ve_interfaces(rbridge_id='1')
+        """
+
+        urn = "{urn:brocade.com:mgmt:brocade-interface-ext}"
+
+        rbridge_id = kwargs.pop('rbridge_id', None)
         ip_result = []
-        request_interface = ET.Element('get-ip-interface', xmlns=int_ns)
+        request_interface = self._get_intf_rb_id(rbridge_id=rbridge_id)
         interface_result = self._callback(request_interface, 'get')
         for interface in interface_result.findall('%sinterface' % urn):
             int_type = interface.find('%sinterface-type' % urn).text
@@ -3345,6 +3365,21 @@ class Interface(object):
                        'ip-address': ip_address}
             ip_result.append(results)
         return ip_result
+
+    @staticmethod
+    def _get_intf_rb_id(rbridge_id):
+        """ Creates a new Netconf request based on the rbridge_id specifed
+        """
+
+        intf_rb_id = ET.Element(
+            'get-ip-interface',
+            xmlns="urn:brocade.com:mgmt:brocade-interface-ext"
+        )
+        if rbridge_id is not None:
+            rbridge_el = ET.SubElement(intf_rb_id, "rbridge-id")
+            rbridge_el.text = rbridge_id
+
+        return intf_rb_id
 
     def conversational_mac(self, **kwargs):
         """Enable conversational mac learning on vdx switches
@@ -3407,6 +3442,7 @@ class Interface(object):
             Return value of `callback`.
         Raises:
             KeyError: if `int_type`, `name`, `vrf` is not passed.
+                      (int_type need not be passed if get=True)
             ValueError: if `int_type`, `name`, `vrf` is invalid.
         Examples:
             >>> import pynos.device
@@ -3426,6 +3462,9 @@ class Interface(object):
             ...         vrf_name='100',
             ...         rbridge_id='1')
             ...         output = dev.interface.add_int_vrf(
+            ...         get=True, name='225/0/38',
+            ...         rbridge_id='1')
+            ...         output = dev.interface.add_int_vrf(
             ...         enable=False,int_type='tengigabitethernet',
             ...         name='225/0/39',
             ...         vrf_name='101',
@@ -3435,9 +3474,9 @@ class Interface(object):
             KeyError
          """
 
-        int_type = kwargs.pop('int_type').lower()
         name = kwargs.pop('name')
         vrf_name = kwargs.pop('vrf_name', 'Default')
+        int_type = kwargs.pop('int_type').lower()
         enable = kwargs.pop('enable', True)
         get = kwargs.pop('get', False)
         rbridge_id = kwargs.pop('rbridge_id', '1')
@@ -3445,10 +3484,12 @@ class Interface(object):
         valid_int_types = ['gigabitethernet', 'tengigabitethernet',
                            'fortygigabitethernet', 'hundredgigabitethernet',
                            'port_channel', 've']
-        vrf_args = dict(name=name, forwarding=vrf_name)
-        method_class = self._interface
         if get:
             enable = None
+
+        vrf_args = dict(name=name, forwarding=vrf_name)
+
+        method_class = self._interface
         if int_type not in valid_int_types:
             raise ValueError('`int_type` must be one of: %s' %
                              repr(valid_int_types))
