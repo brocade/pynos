@@ -4075,3 +4075,54 @@ class Interface(object):
             return callback(config, handler='get_config')
         else:
             return callback(config)
+
+    def create_ve(self, **kwargs):
+        """Create Ve per rbridge_id
+        Args:
+            vlan_id (str): Vlan ID for the VE creation .
+                           Value <NUM:1-4090/8191 when VFAB disabled/enabled>
+            rbridge_id (str): rbridge-id for device.
+            get (bool): Get config instead of editing config. (True, False)
+            delete (bool): True, delete the mac-learning. (True, False)
+            callback (function): A function executed upon completion of the
+                method.  The only parameter passed to `callback` will be the
+                ``ElementTree`` `config`.
+        Returns:
+            Return value of `callback`.
+        Raises:
+            KeyError: if 'vlan_id' is not specified.
+            ValueError: if `vlan_id' is not a valid value
+        Examples:
+            >>> import pynos.device
+            >>> switches = ['10.24.39.211', '10.24.39.203']
+            >>> auth = ('admin', 'password')
+            >>> for switch in switches:
+            ...     conn = (switch, '22')
+            ...     with pynos.device.Device(conn=conn, auth=auth) as dev:
+            ...         output = dev.interface.create_ve(
+            ...         vlan_id='399', rbridge_id='1')
+            ...         output = dev.interface.create_ve(get=True,
+            ...         vlan_id='399', rbridge_id='1')
+            ...         output = dev.interface.create_ve(delete=True,
+            ...         vlan_id='399', rbridge_id='1')
+        """
+        name = kwargs.pop('vlan_id')
+        get = kwargs.pop('get', False)
+        delete = kwargs.pop('delete', False)
+        rbridge_id = kwargs.pop('rbridge_id', '1')
+        callback = kwargs.pop('callback', self._callback)
+
+        if not pynos.utilities.valid_vlan_id(name):
+            raise InvalidVlanId("`vlan_id` must be between `1` and `8191`")
+
+        ve_args = dict(name=name, rbridge_id=rbridge_id)
+
+        method_name = 'rbridge_id_interface_ve_name'
+        method_class = self._rbridge
+        add_ve_int = getattr(method_class, method_name)
+        config = add_ve_int(**ve_args)
+        if get:
+            return callback(config, handler='get_config')
+        if delete:
+            config.find('.//*ve').set('operation', 'delete')
+        return callback(config)
