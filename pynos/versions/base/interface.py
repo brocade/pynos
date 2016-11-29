@@ -4078,10 +4078,10 @@ class Interface(object):
 
     def create_ve(self, **kwargs):
         """
-        Add L3 Interface .
+        Add Ve Interface .
 
         Args:
-            ve_name: ve name with which the L3 interface needs to be
+            ve_name: Ve name with which the Ve interface needs to be
              created.
             enable (bool): If vrf fowarding should be enabled
                 or disabled.Default:``True``.
