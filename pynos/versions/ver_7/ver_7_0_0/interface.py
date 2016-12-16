@@ -1086,7 +1086,7 @@ class Interface(InterfaceBase):
                          target_community='auto')
         if get:
             enable = None
-        method_name = 'rbridge_id_evpn_instance_route_target_imprt_ignore_as'
+        method_name = 'rbridge_id_evpn_instance_route_target_both_ignore_as'
         method_class = self._rbridge
         evpn_args['rbridge_id'] = rbridge_id
         evpn_instance_rt_both_ignore_as = getattr(method_class,
