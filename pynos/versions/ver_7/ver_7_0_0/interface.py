@@ -907,10 +907,10 @@ class Interface(InterfaceBase):
         if not enable:
             if ipaddress.version == 4:
                 config.find('.//*ip-anycast-address').\
-                  set('operation', 'delete')
+                    set('operation', 'delete')
             elif ipaddress.version == 6:
                 config.find('.//*ipv6-anycast-address').\
-                  set('operation', 'delete')
+                    set('operation', 'delete')
         return callback(config)
 
     def arp_suppression(self, **kwargs):
@@ -1030,7 +1030,6 @@ class Interface(InterfaceBase):
             return callback(config, handler='get_config')
         if not enable:
             config.find('.//*/evpn-instance').set('operation', 'delete')
-        pynos.utilities.print_xml_string(config)
         return callback(config)
 
     def evpn_instance_rt_both_ignore_as(self, **kwargs):
