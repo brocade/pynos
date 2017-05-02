@@ -49,7 +49,6 @@ import pynos.versions.ver_7.ver_7_1_0.system
 import pynos.versions.ver_7.ver_7_1_0.nsx
 import pynos.versions.ver_7.ver_7_1_0.hw_vtep
 import pynos.versions.ver_7.ver_7_1_0.vcenter
-import pynos.versions.ver_7.ver_7_1_0.interface
 VERSIONS = {
     '5.0.1': {
         'bgp': pynos.versions.ver_5.ver_5_0_1.bgp.BGP,
@@ -115,7 +114,6 @@ VERSIONS = {
         'vcs': pynos.versions.ver_6.ver_6_0_1.vcs.VCS,
         'firmware': pynos.versions.ver_7.ver_7_0_0.firmware.Firmware,
         'ras': pynos.versions.ver_6.ver_6_0_1.ras.RAS,
-        'interface': pynos.versions.ver_7.ver_7_1_0.interface.Interface,
         'nsx': pynos.versions.ver_7.ver_7_1_0.nsx.Nsx,
         'hw_vtep': pynos.versions.ver_7.ver_7_1_0.hw_vtep.hwvtep,
         'vcenter': pynos.versions.ver_7.ver_7_1_0.vcenter.Vcenter
@@ -132,7 +130,6 @@ VERSIONS = {
         'vcs': pynos.versions.ver_6.ver_6_0_1.vcs.VCS,
         'firmware': pynos.versions.ver_7.ver_7_0_0.firmware.Firmware,
         'ras': pynos.versions.ver_6.ver_6_0_1.ras.RAS,
-        'interface': pynos.versions.ver_7.ver_7_1_0.interface.Interface,
         'nsx': pynos.versions.ver_7.ver_7_1_0.nsx.Nsx,
         'hw_vtep': pynos.versions.ver_7.ver_7_1_0.hw_vtep.hwvtep,
         'vcenter': pynos.versions.ver_7.ver_7_1_0.vcenter.Vcenter
