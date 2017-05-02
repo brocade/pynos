@@ -20,8 +20,6 @@ import pynos.utilities
 from ipaddress import ip_interface
 from pynos.versions.ver_7.ver_7_1_0.yang.brocade_vswitch import brocade_vswitch
 
-
-
 class Vcenter():
     """Vcenter class containing all Vcenter related methods and
     attributes.
@@ -60,22 +58,17 @@ class Vcenter():
         Raises:
             None
         """
-
         config = ET.Element("config")
         vcenter = ET.SubElement(config, "vcenter", xmlns="urn:brocade.com:mgmt:brocade-vswitch")
         id = ET.SubElement(vcenter, "id")
         id.text = kwargs.pop('id')
-
         credentials = ET.SubElement(vcenter, "credentials")
         url = ET.SubElement(credentials, "url")
         url.text = kwargs.pop('url')
-
         username = ET.SubElement(credentials, "username")
         username.text = kwargs.pop('username')
-
         password = ET.SubElement(credentials, "password")
         password.text = kwargs.pop('password')
-
 
         try:
             self._callback(config)
@@ -104,7 +97,6 @@ class Vcenter():
         name = kwargs.pop('name')
         activate = kwargs.pop('activate', True)
         vcenter_args = dict(id = name)
-
         method_class = self._brocade_vswitch
         if activate:
             method_name = 'vcenter_activate'
@@ -115,7 +107,6 @@ class Vcenter():
             return output
         else:
             pass
-            #need to add code for vcenter deactivation.
 
     def get_vcenter(self, **kwargs):
         """
@@ -132,15 +123,12 @@ class Vcenter():
         Raises:
             None
         """
-
         config = ET.Element("config")
         urn = "urn:brocade.com:mgmt:brocade-vswitch"
         ET.SubElement(config, "vcenter", xmlns=urn)
-
         output = self._callback(config,handler='get_config')
         result = []
         element = ET.fromstring(str(output))
-
         for vcenter in element.iter('{%s}vcenter'%urn):
              vc ={}
              vc['name'] = vcenter.find('{%s}id' % urn).text
@@ -150,7 +138,5 @@ class Vcenter():
                  vc['isactive'] = False
              else:
                 vc['isactive'] = True
-
              result.append(vc)
         return result
-

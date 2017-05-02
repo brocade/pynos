@@ -20,8 +20,6 @@ import pynos.utilities
 from ipaddress import ip_interface
 from pynos.versions.ver_7.ver_7_1_0.yang.brocade_tunnels import brocade_tunnels
 
-
-
 class Nsx():
     """NSX class containing all NSX related methods and
     attributes.
@@ -92,7 +90,6 @@ class Nsx():
         if nsxipaddress.version != 4:
             raise ValueError('NSX Controller ip must be IPV4')
 
-
         ip_args = dict(name=name,address=ip_addr)
         method_name = 'nsx_controller_connection_addr_address'
         method_class = self._brocade_tunnels
@@ -100,7 +97,6 @@ class Nsx():
         config = nsxcontroller_attr(**ip_args)
         output = self._callback(config)
         return output
-
 
     def activate_nsxcontroller(self, **kwargs):
         """
@@ -152,7 +148,6 @@ class Nsx():
         return output
 
     def get_nsx_controller(self):
-
         """
         Get/Set nsx controller name
 
@@ -169,13 +164,10 @@ class Nsx():
         urn = "urn:brocade.com:mgmt:brocade-tunnels"
         config = ET.Element("config")
         ET.SubElement(config, "nsx-controller", xmlns = urn)
-
         output = self._callback(config, handler='get_config')
-
         result = {}
         element = ET.fromstring(str(output))
         for controller in element.iter('{%s}nsx-controller'%urn):
-
             result['name'] = controller.find('{%s}name'%urn).text
             isactivate = controller.find('{%s}activate'%urn)
             if isactivate is None:

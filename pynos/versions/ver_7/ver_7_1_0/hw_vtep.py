@@ -18,8 +18,6 @@ import xml.etree.ElementTree as ET
 import pynos.utilities
 from pynos.versions.ver_7.ver_7_1_0.yang.brocade_tunnels import brocade_tunnels
 
-
-
 class hwvtep():
     """hw_vtep class containing all hw_vtep related methods and
     attributes.
@@ -40,7 +38,6 @@ class hwvtep():
         """
         self._callback = callback
         self._brocade_tunnels = brocade_tunnels(callback=pynos.utilities.return_xml)
-
 
     def hwvtep_set_overlaygw_name(self,**kwargs):
         """
@@ -67,7 +64,6 @@ class hwvtep():
         return output
 
     def hwvtep_set_overlaygw_type(self, **kwargs):
-
         """
         Set gateway type
 
@@ -85,7 +81,6 @@ class hwvtep():
         """
         name = kwargs.pop('name')
         type = kwargs.pop('type')
-
         ip_args = dict(name=name, gw_type=type)
         method_name = 'overlay_gateway_gw_type'
         method_class = self._brocade_tunnels
@@ -93,7 +88,6 @@ class hwvtep():
         config = gw_attr(**ip_args)
         output = self._callback(config)
         return output
-
 
     def hwvtep_add_rbridgeid(self, **kwargs):
         """
@@ -113,7 +107,6 @@ class hwvtep():
         """
         name = kwargs.pop('name')
         id = kwargs.pop('rb_range')
-
         ip_args = dict(name=name,rb_add=id)
         method_name = 'overlay_gateway_attach_rbridge_id_rb_add'
         method_class = self._brocade_tunnels
@@ -140,7 +133,6 @@ class hwvtep():
         """
         name = kwargs.pop('name')
         id = kwargs.pop('int_id')
-
         ip_args = dict(name=name,loopback_id=id)
         method_name = 'overlay_gateway_ip_interface_loopback_loopback_id'
         method_class = self._brocade_tunnels
@@ -148,7 +140,6 @@ class hwvtep():
         config = gw_attr(**ip_args)
         output = self._callback(config)
         return output
-
 
     def hwvtep_add_ve_interface(self,**kwargs):
         """
@@ -170,20 +161,17 @@ class hwvtep():
         name = kwargs.pop('name')
         ve_id = kwargs.pop('ve_id')
         vrrp_id = kwargs.pop('vrrp_id')
-
         ve_args = dict(name=name, ve_id=ve_id)
         method_name = 'overlay_gateway_ip_interface_ve_ve_id'
         method_class = self._brocade_tunnels
         ve_attr = getattr(method_class, method_name)
         config = ve_attr(**ve_args)
         output = self._callback(config)
-
         method_name = 'overlay_gateway_ip_interface_ve_vrrp_extended_group'
         vrrp_attr = getattr(method_class, method_name)
         vrrp_args = dict(name=name, vrrp_extended_group=vrrp_id)
         config = vrrp_attr(**vrrp_args)
         output = self._callback(config)
-
 
         return output
 
@@ -211,7 +199,6 @@ class hwvtep():
         output = self._callback(config)
         return output
 
-
     def hwvtep_attach_vlan_vid(self, **kwargs):
         """
         Identifies exported VLANs in VXLAN gateway configurations.
@@ -232,15 +219,12 @@ class hwvtep():
         mac = kwargs.pop('mac')
         vlan = kwargs.pop('vlan')
         name_args = dict(name=name,vid=vlan,mac=mac)
-        #method_name = 'overlay_gateway_attach_vlan_vid'
         method_name= 'overlay_gateway_attach_vlan_mac'
         method_class = self._brocade_tunnels
         gw_attr = getattr(method_class, method_name)
         config = gw_attr(**name_args)
         output = self._callback(config)
         return output
-
-
 
     def get_overlay_gateway(self):
         """
@@ -259,7 +243,6 @@ class hwvtep():
         config = ET.Element("config")
         ET.SubElement(config, "overlay-gateway" , xmlns = urn)
         output = self._callback(config, handler='get_config')
-
         result = {}
         element = ET.fromstring(str(output))
         for overlayGw in element.iter('{%s}overlay-gateway' % urn):
@@ -290,5 +273,3 @@ class hwvtep():
                 result['attached-vlan'] = vlans
 
         return result
-
-
