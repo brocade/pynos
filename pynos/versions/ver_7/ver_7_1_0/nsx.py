@@ -12,10 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
-import re
 import xml.etree.ElementTree as ET
-from ipaddress import ip_interface
 import pynos.utilities
 from ipaddress import ip_interface
 from pynos.versions.ver_7.ver_7_1_0.yang.brocade_tunnels import brocade_tunnels
@@ -24,7 +21,7 @@ class Nsx():
     """NSX class containing all NSX related methods and
     attributes.
     """
-    def __init__(self,callback):
+    def __init__(self, callback):
         """
         NSX init function
 
@@ -38,9 +35,9 @@ class Nsx():
             None
         """
         self._callback = callback
-        self._brocade_tunnels = brocade_tunnels (callback=pynos.utilities.return_xml)
+        self._brocade_tunnels = brocade_tunnels(callback=pynos.utilities.return_xml)
 
-    def nsx_controller_name(self,**kwargs):
+    def nsx_controller_name(self, **kwargs):
         """
         Get/Set nsx controller name
 
@@ -63,8 +60,8 @@ class Nsx():
         nsxcontroller_attr = getattr(method_class, method_name)
         config = nsxcontroller_attr(**name_args)
 
-        if kwargs.pop('get',False):
-            output  = self._callback(config,handler='get_config')
+        if kwargs.pop('get', False):
+            output = self._callback(config, handler='get_config')
         else:
             output = self._callback(config)
         return output
@@ -85,12 +82,12 @@ class Nsx():
             None
         """
         name = kwargs.pop('name')
-        ip_addr = str((kwargs.pop('ip_addr',None)))
+        ip_addr = str((kwargs.pop('ip_addr', None)))
         nsxipaddress = ip_interface(unicode(ip_addr))
         if nsxipaddress.version != 4:
             raise ValueError('NSX Controller ip must be IPV4')
 
-        ip_args = dict(name=name,address=ip_addr)
+        ip_args = dict(name=name, address=ip_addr)
         method_name = 'nsx_controller_connection_addr_address'
         method_class = self._brocade_tunnels
         nsxcontroller_attr = getattr(method_class, method_name)
@@ -163,7 +160,7 @@ class Nsx():
         """
         urn = "urn:brocade.com:mgmt:brocade-tunnels"
         config = ET.Element("config")
-        ET.SubElement(config, "nsx-controller", xmlns = urn)
+        ET.SubElement(config, "nsx-controller", xmlns=urn)
         output = self._callback(config, handler='get_config')
         result = {}
         element = ET.fromstring(str(output))
@@ -176,14 +173,14 @@ class Nsx():
                 result['activate'] = True
             connection = controller.find('{%s}connection-addr'%urn)
             if connection is None:
-                result['port'] =  None
-                result ['address'] = None
-            else :
+                result['port'] = None
+                result['address'] = None
+            else:
                 result['port'] = connection.find('{%s}port'%urn).text
                 address = connection.find('{%s}address'%urn)
                 if address is None:
-                    result ['address'] = None
-                else :
+                    result['address'] = None
+                else:
                     result['address'] = address.text
 
         return result

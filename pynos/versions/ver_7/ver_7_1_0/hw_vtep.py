@@ -12,8 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
-import re
 import xml.etree.ElementTree as ET
 import pynos.utilities
 from pynos.versions.ver_7.ver_7_1_0.yang.brocade_tunnels import brocade_tunnels
@@ -39,7 +37,7 @@ class hwvtep():
         self._callback = callback
         self._brocade_tunnels = brocade_tunnels(callback=pynos.utilities.return_xml)
 
-    def hwvtep_set_overlaygw_name(self,**kwargs):
+    def hwvtep_set_overlaygw_name(self, **kwargs):
         """
         Set overlay-gateway name on the switch
 
@@ -107,7 +105,7 @@ class hwvtep():
         """
         name = kwargs.pop('name')
         id = kwargs.pop('rb_range')
-        ip_args = dict(name=name,rb_add=id)
+        ip_args = dict(name=name, rb_add=id)
         method_name = 'overlay_gateway_attach_rbridge_id_rb_add'
         method_class = self._brocade_tunnels
         gw_attr = getattr(method_class, method_name)
@@ -133,7 +131,7 @@ class hwvtep():
         """
         name = kwargs.pop('name')
         id = kwargs.pop('int_id')
-        ip_args = dict(name=name,loopback_id=id)
+        ip_args = dict(name=name, loopback_id=id)
         method_name = 'overlay_gateway_ip_interface_loopback_loopback_id'
         method_class = self._brocade_tunnels
         gw_attr = getattr(method_class, method_name)
@@ -141,7 +139,7 @@ class hwvtep():
         output = self._callback(config)
         return output
 
-    def hwvtep_add_ve_interface(self,**kwargs):
+    def hwvtep_add_ve_interface(self, **kwargs):
         """
                Add virtual ethernet (ve) interface to the overlay-gateway
 
@@ -218,8 +216,8 @@ class hwvtep():
         name = kwargs.pop('name')
         mac = kwargs.pop('mac')
         vlan = kwargs.pop('vlan')
-        name_args = dict(name=name,vid=vlan,mac=mac)
-        method_name= 'overlay_gateway_attach_vlan_mac'
+        name_args = dict(name=name, vid=vlan, mac=mac)
+        method_name = 'overlay_gateway_attach_vlan_mac'
         method_class = self._brocade_tunnels
         gw_attr = getattr(method_class, method_name)
         config = gw_attr(**name_args)
@@ -241,7 +239,7 @@ class hwvtep():
         """
         urn = "urn:brocade.com:mgmt:brocade-tunnels"
         config = ET.Element("config")
-        ET.SubElement(config, "overlay-gateway" , xmlns = urn)
+        ET.SubElement(config, "overlay-gateway", xmlns=urn)
         output = self._callback(config, handler='get_config')
         result = {}
         element = ET.fromstring(str(output))

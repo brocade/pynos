@@ -13,18 +13,15 @@
 # under the License.
 
 import logging
-import re
 import xml.etree.ElementTree as ET
-from ipaddress import ip_interface
 import pynos.utilities
-from ipaddress import ip_interface
 from pynos.versions.ver_7.ver_7_1_0.yang.brocade_vswitch import brocade_vswitch
 
 class Vcenter():
     """Vcenter class containing all Vcenter related methods and
     attributes.
     """
-    def __init__(self,callback):
+    def __init__(self, callback):
         """
         Vcenter init function
 
@@ -38,9 +35,9 @@ class Vcenter():
             None
         """
         self._callback = callback
-        self._brocade_vswitch = brocade_vswitch (callback=pynos.utilities.return_xml)
+        self._brocade_vswitch = brocade_vswitch(callback=pynos.utilities.return_xml)
 
-    def add_vcenter(self,**kwargs):
+    def add_vcenter(self, **kwargs):
         """
         Add vCenter on the switch
 
@@ -59,7 +56,8 @@ class Vcenter():
             None
         """
         config = ET.Element("config")
-        vcenter = ET.SubElement(config, "vcenter", xmlns="urn:brocade.com:mgmt:brocade-vswitch")
+        vcenter = ET.SubElement(config, "vcenter",
+                                xmlns="urn:brocade.com:mgmt:brocade-vswitch")
         id = ET.SubElement(vcenter, "id")
         id.text = kwargs.pop('id')
         credentials = ET.SubElement(vcenter, "credentials")
@@ -78,13 +76,14 @@ class Vcenter():
             logging.error(error)
             return False
 
-    def activate_vcenter(self,**kwargs):
+    def activate_vcenter(self, **kwargs):
         """
         Activate vCenter on the switch
 
         Args:
             name: (str) : Name of an established vCenter
-            activate (bool) : Activates the vCenter if activate=True else deactivates it
+            activate (bool) : Activates the vCenter if activate=True
+                              else deactivates it
             callback (function): A function executed upon completion of the
                  method.
 
@@ -96,7 +95,7 @@ class Vcenter():
         """
         name = kwargs.pop('name')
         activate = kwargs.pop('activate', True)
-        vcenter_args = dict(id = name)
+        vcenter_args = dict(id=name)
         method_class = self._brocade_vswitch
         if activate:
             method_name = 'vcenter_activate'
@@ -126,17 +125,17 @@ class Vcenter():
         config = ET.Element("config")
         urn = "urn:brocade.com:mgmt:brocade-vswitch"
         ET.SubElement(config, "vcenter", xmlns=urn)
-        output = self._callback(config,handler='get_config')
+        output = self._callback(config, handler='get_config')
         result = []
         element = ET.fromstring(str(output))
         for vcenter in element.iter('{%s}vcenter'%urn):
-             vc ={}
-             vc['name'] = vcenter.find('{%s}id' % urn).text
-             vc['url'] = (vcenter.find('{%s}credentials' % urn)).find('{%s}url' % urn).text
-             isactive = vcenter.find('{%s}activate' %urn)
-             if isactive is None:
-                 vc['isactive'] = False
-             else:
+            vc = {}
+            vc['name'] = vcenter.find('{%s}id' % urn).text
+            vc['url'] = (vcenter.find('{%s}credentials' % urn)).find('{%s}url' % urn).text
+            isactive = vcenter.find('{%s}activate' %urn)
+            if isactive is None:
+                vc['isactive'] = False
+            else:
                 vc['isactive'] = True
-             result.append(vc)
+            result.append(vc)
         return result
