@@ -19,11 +19,9 @@ from pynos.versions.ver_7.ver_7_1_0.yang.brocade_rbridge import brocade_rbridge
 import xml.etree.ElementTree as ET
 import pynos.utilities
 
-
 class System(BaseSystem):
     """System class containing all system level methods and attributes.
     """
-
     def __init__(self, callback):
         super(System, self).__init__(callback)
         self._rbridge = brocade_rbridge(callback=pynos.utilities.return_xml)

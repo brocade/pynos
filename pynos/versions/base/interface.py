@@ -4136,3 +4136,43 @@ class Interface(object):
         if not enable:
             config.find('.//*ve').set('operation', 'delete')
         return callback(config)
+
+    def port_profile_port(self,inter_type, inter,enable=True):
+        """
+        Activates the Automatic Migration of Port Profiles (AMPP) port-profile configuration mode on a port.
+        Args:
+          inter_type: The type of interface you want to configure. Ex.
+                tengigabitethernet, gigabitethernet, fortygigabitethernet.
+          inter: The ID for the interface you want to configure. Ex. 1/0/1
+          enable: (bool) Enables port_profile mdode by default. If set to False
+                    disables the port-profile mode.
+        Returns:
+            True if command completes successfully or False if not.
+
+        Raises:
+            None
+        """
+
+        config = ET.Element("config")
+        interface = ET.SubElement(config, "interface", xmlns="urn:brocade.com:mgmt:brocade-interface")
+        tengigabitethernet = ET.SubElement(interface, inter_type)
+        name_key = ET.SubElement(tengigabitethernet, "name")
+        name_key.text = inter
+
+        if enable:
+            port_profile_port = ET.SubElement(tengigabitethernet, "port-profile-port",
+                                              xmlns="urn:brocade.com:mgmt:brocade-port-profile")
+        else:
+            port_profile_port = ET.SubElement(tengigabitethernet, "port-profile-port",
+                                              xmlns="urn:brocade.com:mgmt:brocade-port-profile",
+                                              operation='delete')
+        try:
+            if enable:
+                self._callback(config)
+                return True
+            else:
+                self._callback(config)
+                return True
+        except Exception as e:
+            logging.error(e)
+            return False
